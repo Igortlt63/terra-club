@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useCallback } from 'react';
 import { DEMO_USERS, MESSAGES } from '../data/db';
+import { supabase } from '../supabase'
 
 const AppContext = createContext(null);
 
@@ -10,7 +11,6 @@ export function AppProvider({ children }) {
   const [activeChannel, setActiveChannel] = useState(null);
   const [notification, setNotification] = useState(null);
 
-import { supabase } from '../supabase'
 
 const login = useCallback(async (email, password) => {
   const { data, error } = await supabase.auth.signInWithPassword({
