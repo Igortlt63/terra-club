@@ -6,10 +6,17 @@ import MentoringCabinet from './MentoringCabinet';
 import CRMPage from './CRMPage';
 import AdminDashboard from './AdminDashboard';
 import ProfilePage from './ProfilePage';
+import DevPanel from './DevPanel';
 
 const ROLE_LABELS = {
-  admin: 'Руководство', teacher: 'Преподаватель', student: 'Ученик',
-  mentor: 'Наставник',  mentee: 'Наставляемый',   guest: 'Гость', member: 'Участник',
+  admin:     'Руководство',
+  teacher:   'Преподаватель',
+  student:   'Ученик',
+  mentor:    'Наставник',
+  mentee:    'Наставляемый',
+  guest:     'Гость',
+  member:    'Участник',
+  developer: 'Разработчик',
 };
 
 function NavItem({ icon, label, view, badge, currentView, setView }) {
@@ -82,6 +89,13 @@ function getNavItems(role) {
     ]});
   }
 
+  // Панель разработчика
+  if (role === 'developer') {
+    items.push({ section: 'Разработка', items: [
+      { icon: '🛠️', label: 'Панель разработчика', view: 'devpanel' },
+    ]});
+  }
+
   // Профиль — для всех
   items.push({ section: 'Аккаунт', items: [
     { icon: '👤', label: 'Мой профиль', view: 'profile' },
@@ -97,6 +111,7 @@ const VIEW_TITLES = {
   crm:       () => 'CRM · Участники',
   dashboard: () => 'Панель управления',
   profile:   () => 'Мой профиль',
+  devpanel:  () => '🛠️ Панель разработчика',
 };
 
 export default function AppShell() {
@@ -106,7 +121,8 @@ export default function AppShell() {
 
   // Начальный экран по роли
   useEffect(() => {
-    if (role === 'admin') setActiveView('dashboard');
+    if (role === 'admin')     setActiveView('dashboard');
+    else if (role === 'developer') setActiveView('devpanel');
     else setActiveView('chat');
   }, [role]); // eslint-disable-line
 
@@ -198,6 +214,7 @@ export default function AppShell() {
           {activeView === 'crm'       && <CRMPage />}
           {activeView === 'dashboard' && <AdminDashboard />}
           {activeView === 'profile'   && <ProfilePage />}
+          {activeView === 'devpanel'  && <DevPanel />}
         </div>
       </div>
 

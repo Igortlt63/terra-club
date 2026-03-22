@@ -226,7 +226,7 @@ export function AppProvider({ children }) {
 
   return (
     <AppContext.Provider value={{
-      currentUser, loading,
+      currentUser, setCurrentUser, loading,
       login, logout,
       messages, sendMessage, loadMessages,
       profiles, getProfile, fetchProfile,
