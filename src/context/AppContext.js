@@ -4,15 +4,15 @@ import { supabase } from '../supabase';
 const AppContext = createContext(null);
 
 export function AppProvider({ children }) {
-  const [currentUser,    setCurrentUser]    = useState(null);
-  const [profiles,       setProfiles]       = useState({});
-  const [messages,       setMessages]       = useState({});
-  const [activeView,     setActiveView]     = useState('chat');
-  const [activeChannel,  setActiveChannel]  = useState(null);
-  const [notification,   setNotification]   = useState(null);
-  const [loading,        setLoading]        = useState(true);
+  const [currentUser,   setCurrentUser]   = useState(null);
+  const [profiles,      setProfiles]      = useState({});
+  const [messages,      setMessages]      = useState({});
+  const [activeView,    setActiveView]    = useState('chat');
+  const [activeChannel, setActiveChannel] = useState(null);
+  const [notification,  setNotification]  = useState(null);
+  const [loading,       setLoading]       = useState(true);
 
-  // ── Загрузить профиль из Supabase ──────────────────────
+  // ── Загрузить профиль из базы и положить в кэш ──────────
   const fetchProfile = useCallback(async (userId) => {
     try {
       const { data } = await supabase
@@ -29,23 +29,31 @@ export function AppProvider({ children }) {
     }
   }, []);
 
-  // ── Восстановить сессию при загрузке ──────────────────
+  // ── Восстановить сессию при загрузке страницы ────────────
   useEffect(() => {
     let cancelled = false;
 
     const restoreSession = async () => {
       try {
-        // Таймаут 8 секунд — если Supabase не отвечает, показываем форму входа
-        const timeout = new Promise(resolve => setTimeout(() => resolve(null), 8000));
+        const timeout        = new Promise(resolve => setTimeout(() => resolve(null), 8000));
         const sessionRequest = supabase.auth.getSession();
-        const result = await Promise.race([sessionRequest, timeout]);
+        const result         = await Promise.race([sessionRequest, timeout]);
 
         if (cancelled) return;
 
         const session = result?.data?.session;
         if (session?.user) {
-          const profile = await fetchProfile(session.user.id);
-          if (!cancelled && profile) setCurrentUser(profile);
+          // Всегда берём свежий профиль напрямую из базы — не из кэша
+          const { data: freshProfile } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', session.user.id)
+            .single();
+
+          if (!cancelled && freshProfile) {
+            setProfiles(prev => ({ ...prev, [freshProfile.id]: freshProfile }));
+            setCurrentUser(freshProfile);
+          }
         }
       } catch (err) {
         console.error('Session restore error:', err);
@@ -56,16 +64,16 @@ export function AppProvider({ children }) {
 
     restoreSession();
 
-    // Слушаем изменения авторизации
+    // Слушаем выход из системы
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         if (event === 'SIGNED_OUT') {
           if (!cancelled) {
             setCurrentUser(null);
             setMessages({});
+            setProfiles({});
           }
         }
-        // SIGNED_IN обрабатывается в функции login напрямую
       }
     );
 
@@ -73,20 +81,21 @@ export function AppProvider({ children }) {
       cancelled = true;
       subscription.unsubscribe();
     };
-  }, [fetchProfile]);
+  }, []);
 
-  // ── Real-time: новые сообщения ────────────────────────
+  // ── Real-time: новые сообщения ───────────────────────────
   useEffect(() => {
     if (!currentUser) return;
 
     const subscription = supabase
       .channel('realtime:messages')
       .on('postgres_changes', {
-        event: 'INSERT',
+        event:  'INSERT',
         schema: 'public',
-        table: 'messages',
+        table:  'messages',
       }, async (payload) => {
         const msg = payload.new;
+        // Подгружаем профиль отправителя если ещё нет в кэше
         if (!profiles[msg.user_id]) {
           await fetchProfile(msg.user_id);
         }
@@ -107,45 +116,37 @@ export function AppProvider({ children }) {
     return () => subscription.unsubscribe();
   }, [currentUser, profiles, fetchProfile]);
 
-  // ── ВХОД ─────────────────────────────────────────────
+  // ── ВХОД ─────────────────────────────────────────────────
   const login = useCallback(async (email, password) => {
     try {
       const { data, error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) return { success: false, error: 'Неверный email или пароль' };
 
-      // Ищем существующий профиль
-      const profile = await fetchProfile(data.user.id);
+      // Всегда берём свежий профиль напрямую из базы — роль не перезаписывается
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', data.user.id)
+        .single();
 
       if (profile) {
-        // Профиль есть — используем его БЕЗ перезаписи роли
+        setProfiles(prev => ({ ...prev, [profile.id]: profile }));
         setCurrentUser(profile);
         return { success: true, user: profile };
       }
 
       // Профиля нет — создаём новый с ролью guest
-      const meta = data.user.user_metadata || {};
-      const name = meta.name || email.split('@')[0];
+      const meta     = data.user.user_metadata || {};
+      const name     = meta.name || email.split('@')[0];
       const initials = name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
-      const colors = ['#C9922A', '#3B82F6', '#8B5CF6', '#22C55E', '#EF4444', '#F97316'];
-      const color = colors[Math.floor(Math.random() * colors.length)];
+      const colors   = ['#C9922A', '#3B82F6', '#8B5CF6', '#22C55E', '#EF4444', '#F97316'];
+      const color    = colors[Math.floor(Math.random() * colors.length)];
 
-      const { data: created, error: createErr } = await supabase
+      const { data: created } = await supabase
         .from('profiles')
-        .insert({
-          id:    data.user.id,
-          name,
-          initials,
-          role:  'guest',
-          color,
-          email: data.user.email,
-        })
+        .insert({ id: data.user.id, name, initials, role: 'guest', color, email: data.user.email })
         .select()
         .single();
-
-      if (createErr) {
-        console.error('Profile create error:', createErr.message);
-        return { success: false, error: 'Ошибка создания профиля: ' + createErr.message };
-      }
 
       if (created) {
         setProfiles(prev => ({ ...prev, [created.id]: created }));
@@ -157,9 +158,9 @@ export function AppProvider({ children }) {
     } catch (err) {
       return { success: false, error: 'Ошибка соединения. Попробуйте ещё раз.' };
     }
-  }, [fetchProfile]);
+  }, []);
 
-  // ── ВЫХОД ────────────────────────────────────────────
+  // ── ВЫХОД ─────────────────────────────────────────────────
   const logout = useCallback(async () => {
     await supabase.auth.signOut();
     setCurrentUser(null);
@@ -169,10 +170,9 @@ export function AppProvider({ children }) {
     setActiveChannel(null);
   }, []);
 
-  // ── Загрузить сообщения канала ───────────────────────
+  // ── Загрузить сообщения канала ────────────────────────────
   const loadMessages = useCallback(async (channelKey) => {
-    // Если уже загружены — не грузим снова
-    if (messages[channelKey]) return;
+    if (messages[channelKey]) return; // уже загружены
 
     try {
       const { data } = await supabase
@@ -183,7 +183,7 @@ export function AppProvider({ children }) {
         .limit(100);
 
       if (data && data.length > 0) {
-        // Подгружаем профили отправителей
+        // Подгружаем профили всех отправителей
         const uniqueIds = [...new Set(data.map(m => m.user_id))];
         await Promise.all(uniqueIds.map(id => profiles[id] ? null : fetchProfile(id)));
 
@@ -194,10 +194,8 @@ export function AppProvider({ children }) {
           time:   new Date(m.created_at).toLocaleTimeString('ru', { hour: '2-digit', minute: '2-digit' }),
           date:   m.created_at.slice(0, 10),
         }));
-
         setMessages(prev => ({ ...prev, [channelKey]: formatted }));
       } else {
-        // Канал пустой — ставим пустой массив чтобы не грузить снова
         setMessages(prev => ({ ...prev, [channelKey]: [] }));
       }
     } catch (err) {
@@ -206,7 +204,7 @@ export function AppProvider({ children }) {
     }
   }, [messages, profiles, fetchProfile]);
 
-  // ── Отправить сообщение ──────────────────────────────
+  // ── Отправить сообщение ───────────────────────────────────
   const sendMessage = useCallback(async (channelKey, text) => {
     if (!text.trim() || !currentUser) return;
     const { error } = await supabase
@@ -215,12 +213,12 @@ export function AppProvider({ children }) {
     if (error) console.error('sendMessage error:', error.message);
   }, [currentUser]);
 
-  // ── Получить профиль из кэша ────────────────────────
+  // ── Получить профиль из кэша ──────────────────────────────
   const getProfile = useCallback((userId) => {
     return profiles[userId] || null;
   }, [profiles]);
 
-  // ── Уведомление ──────────────────────────────────────
+  // ── Показать уведомление ──────────────────────────────────
   const showNotification = useCallback((msg, type = 'info') => {
     setNotification({ msg, type });
     setTimeout(() => setNotification(null), 3000);
