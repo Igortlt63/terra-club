@@ -17,7 +17,6 @@ function ProgressRing({ pct, size = 48, stroke = 4, color = '#C9922A' }) {
   );
 }
 
-// ── Карточка статистики ─────────────────────────────────────
 function StatCard({ icon, label, value }) {
   return (
     <div style={{ background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 10, padding: '14px 16px' }}>
@@ -28,12 +27,12 @@ function StatCard({ icon, label, value }) {
   );
 }
 
-// ── Модалка: сдать задание ──────────────────────────────────
+// ── Модалка: сдать задание (ученик) ─────────────────────────
 function SubmitModal({ task, onClose, onSubmitted }) {
   const { currentUser } = useApp();
-  const [answer,  setAnswer]  = useState('');
-  const [saving,  setSaving]  = useState(false);
-  const [error,   setError]   = useState('');
+  const [answer, setAnswer] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [error,  setError]  = useState('');
 
   const handleSubmit = async () => {
     if (!answer.trim()) { setError('Напишите ваш ответ'); return; }
@@ -41,8 +40,7 @@ function SubmitModal({ task, onClose, onSubmitted }) {
     const { error: err } = await supabase
       .from('tasks')
       .update({ status: 'submitted', answer: answer.trim() })
-      .eq('id', task.id)
-      .eq('assigned_to', currentUser.id);
+      .eq('id', task.id);
     if (err) { setError(err.message); setSaving(false); return; }
     onSubmitted();
     onClose();
@@ -56,7 +54,7 @@ function SubmitModal({ task, onClose, onSubmitted }) {
           <button onClick={onClose} style={MS.close}>×</button>
         </div>
         <div style={MS.body}>
-          <div style={{ fontSize: 14, fontWeight: 500, marginBottom: 4 }}>{task.title}</div>
+          <div style={{ fontSize: 14, fontWeight: 500, marginBottom: 6 }}>{task.title}</div>
           {task.description && (
             <div style={{ fontSize: 13, color: 'var(--text2)', marginBottom: 16, lineHeight: 1.6 }}>{task.description}</div>
           )}
@@ -65,7 +63,7 @@ function SubmitModal({ task, onClose, onSubmitted }) {
             value={answer} onChange={e => setAnswer(e.target.value)}
             placeholder="Опишите что вы сделали, какие результаты получили..."
             rows={5}
-            style={{ width: '100%', padding: '10px 12px', border: '1px solid var(--border2)', borderRadius: 8, fontSize: 13, fontFamily: 'inherit', resize: 'vertical', outline: 'none' }}
+            style={{ width: '100%', padding: '10px 12px', border: '1px solid var(--border2)', borderRadius: 8, fontSize: 13, fontFamily: 'inherit', resize: 'vertical', outline: 'none', boxSizing: 'border-box' }}
           />
           {error && <div style={MS.error}>{error}</div>}
         </div>
@@ -80,13 +78,88 @@ function SubmitModal({ task, onClose, onSubmitted }) {
   );
 }
 
-// ── Модалка: создать задание (для преподавателя) ────────────
-function CreateTaskModal({ schoolId, streamNumber, onClose, onCreated }) {
+// ── Модалка: проверить задание (преподаватель) ───────────────
+function GradeModal({ task, studentName, onClose, onGraded }) {
+  const [grade,    setGrade]    = useState('5');
+  const [feedback, setFeedback] = useState('');
+  const [saving,   setSaving]   = useState(false);
+  const [error,    setError]    = useState('');
+
+  const handleGrade = async () => {
+    setSaving(true);
+    const { error: err } = await supabase
+      .from('tasks')
+      .update({ status: 'done', grade: parseInt(grade), feedback: feedback.trim() || null })
+      .eq('id', task.id);
+    if (err) { setError(err.message); setSaving(false); return; }
+    onGraded();
+    onClose();
+  };
+
+  return (
+    <div style={MS.overlay} onClick={onClose}>
+      <div style={MS.modal} onClick={e => e.stopPropagation()}>
+        <div style={MS.header}>
+          <span style={MS.title}>✅ Проверить задание</span>
+          <button onClick={onClose} style={MS.close}>×</button>
+        </div>
+        <div style={MS.body}>
+          <div style={{ fontSize: 14, fontWeight: 500, marginBottom: 4 }}>{task.title}</div>
+          {studentName && <div style={{ fontSize: 12, color: 'var(--text3)', marginBottom: 12 }}>Ученик: {studentName}</div>}
+          {task.answer && (
+            <div style={{ background: 'var(--bg2)', padding: '12px 14px', borderRadius: 8, marginBottom: 16, fontSize: 13, lineHeight: 1.6, border: '1px solid var(--border)' }}>
+              <div style={{ fontSize: 11, color: 'var(--text3)', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Ответ ученика</div>
+              {task.answer}
+            </div>
+          )}
+          <div style={MS.field}>
+            <label style={MS.label}>Оценка</label>
+            <div style={{ display: 'flex', gap: 8 }}>
+              {[5, 4, 3, 2, 1].map(g => (
+                <button
+                  key={g}
+                  onClick={() => setGrade(String(g))}
+                  style={{
+                    flex: 1, padding: '10px 0', borderRadius: 8,
+                    border: grade === String(g) ? '2px solid #C9922A' : '1px solid var(--border2)',
+                    background: grade === String(g) ? 'rgba(201,146,42,0.1)' : '#fff',
+                    fontWeight: grade === String(g) ? 700 : 400,
+                    color: grade === String(g) ? '#C9922A' : 'var(--text2)',
+                    cursor: 'pointer', fontSize: 14, fontFamily: 'inherit',
+                  }}
+                >{g}⭐</button>
+              ))}
+            </div>
+          </div>
+          <div style={MS.field}>
+            <label style={MS.label}>Отзыв (необязательно)</label>
+            <textarea
+              value={feedback} onChange={e => setFeedback(e.target.value)}
+              placeholder="Комментарий для ученика..."
+              rows={3}
+              style={{ width: '100%', padding: '9px 12px', border: '1px solid var(--border2)', borderRadius: 8, fontSize: 13, fontFamily: 'inherit', resize: 'none', outline: 'none', boxSizing: 'border-box' }}
+            />
+          </div>
+          {error && <div style={MS.error}>{error}</div>}
+        </div>
+        <div style={MS.footer}>
+          <button onClick={onClose} style={MS.btnCancel}>Отмена</button>
+          <button onClick={handleGrade} disabled={saving} style={MS.btnPrimary}>
+            {saving ? 'Сохраняю...' : '✅ Поставить оценку'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Модалка: создать задание (преподаватель) ─────────────────
+function CreateTaskModal({ schoolId, modules, onClose, onCreated }) {
   const { currentUser } = useApp();
   const [title,    setTitle]    = useState('');
   const [desc,     setDesc]     = useState('');
   const [deadline, setDeadline] = useState('');
-  const [module,   setModule]   = useState('');
+  const [moduleId, setModuleId] = useState('');
   const [saving,   setSaving]   = useState(false);
   const [error,    setError]    = useState('');
 
@@ -94,37 +167,29 @@ function CreateTaskModal({ schoolId, streamNumber, onClose, onCreated }) {
     if (!title.trim()) { setError('Введите название задания'); return; }
     setSaving(true);
 
-    // Получаем всех учеников этой школы
+    const selectedModule = modules.find(m => m.id === moduleId);
+
     const { data: students } = await supabase
       .from('profiles')
       .select('id')
       .eq('school_id', schoolId)
       .eq('role', 'student');
 
+    const baseTask = {
+      title:       title.trim(),
+      description: desc.trim() || null,
+      school_id:   schoolId,
+      module:      selectedModule?.number || null,
+      deadline:    deadline || null,
+      created_by:  currentUser.id,
+      status:      'pending',
+    };
+
     if (!students || students.length === 0) {
-      // Создаём задание без привязки к конкретному ученику
-      const { error: err } = await supabase.from('tasks').insert({
-        title:       title.trim(),
-        description: desc.trim() || null,
-        school_id:   schoolId,
-        module:      module ? parseInt(module) : null,
-        deadline:    deadline || null,
-        created_by:  currentUser.id,
-        status:      'pending',
-      });
+      const { error: err } = await supabase.from('tasks').insert(baseTask);
       if (err) { setError(err.message); setSaving(false); return; }
     } else {
-      // Создаём задание для каждого ученика
-      const rows = students.map(s => ({
-        title:       title.trim(),
-        description: desc.trim() || null,
-        school_id:   schoolId,
-        module:      module ? parseInt(module) : null,
-        deadline:    deadline || null,
-        created_by:  currentUser.id,
-        assigned_to: s.id,
-        status:      'pending',
-      }));
+      const rows = students.map(s => ({ ...baseTask, assigned_to: s.id }));
       const { error: err } = await supabase.from('tasks').insert(rows);
       if (err) { setError(err.message); setSaving(false); return; }
     }
@@ -143,20 +208,32 @@ function CreateTaskModal({ schoolId, streamNumber, onClose, onCreated }) {
         <div style={MS.body}>
           <div style={MS.field}>
             <label style={MS.label}>Название задания *</label>
-            <input value={title} onChange={e => setTitle(e.target.value)} placeholder="Например: Провести реальные переговоры" style={MS.input} />
+            <input value={title} onChange={e => setTitle(e.target.value)}
+              placeholder="Например: Провести реальные переговоры"
+              style={{ ...MS.inputStyle }} />
           </div>
           <div style={MS.field}>
             <label style={MS.label}>Описание</label>
-            <textarea value={desc} onChange={e => setDesc(e.target.value)} placeholder="Подробное описание что нужно сделать..." rows={3} style={{ ...MS.input, resize: 'vertical' }} />
+            <textarea value={desc} onChange={e => setDesc(e.target.value)}
+              placeholder="Подробное описание что нужно сделать..."
+              rows={3}
+              style={{ ...MS.inputStyle, resize: 'vertical' }} />
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
             <div style={MS.field}>
-              <label style={MS.label}>Номер модуля</label>
-              <input type="number" value={module} onChange={e => setModule(e.target.value)} placeholder="например: 4" style={MS.input} />
+              <label style={MS.label}>Модуль</label>
+              <select value={moduleId} onChange={e => setModuleId(e.target.value)}
+                style={{ ...MS.inputStyle, background: '#fff' }}>
+                <option value="">— не выбран —</option>
+                {modules.map(m => (
+                  <option key={m.id} value={m.id}>Модуль {m.number}: {m.title}</option>
+                ))}
+              </select>
             </div>
             <div style={MS.field}>
               <label style={MS.label}>Дедлайн</label>
-              <input type="date" value={deadline} onChange={e => setDeadline(e.target.value)} style={MS.input} />
+              <input type="date" value={deadline} onChange={e => setDeadline(e.target.value)}
+                style={{ ...MS.inputStyle }} />
             </div>
           </div>
           {error && <div style={MS.error}>{error}</div>}
@@ -172,14 +249,83 @@ function CreateTaskModal({ schoolId, streamNumber, onClose, onCreated }) {
   );
 }
 
-// ── Обзор всех школ для администратора ─────────────────────
+// ── Модалка: создать/редактировать модуль (преподаватель) ────
+function ModuleModal({ module, schoolId, nextNumber, onClose, onSaved }) {
+  const { currentUser } = useApp();
+  const [title,   setTitle]   = useState(module?.title   || '');
+  const [desc,    setDesc]    = useState(module?.description || '');
+  const [content, setContent] = useState(module?.content || '');
+  const [saving,  setSaving]  = useState(false);
+  const [error,   setError]   = useState('');
+
+  const handleSave = async () => {
+    if (!title.trim()) { setError('Введите название модуля'); return; }
+    setSaving(true);
+
+    if (module?.id) {
+      // Редактирование
+      const { error: err } = await supabase.from('modules')
+        .update({ title: title.trim(), description: desc.trim() || null, content: content.trim() || null })
+        .eq('id', module.id);
+      if (err) { setError(err.message); setSaving(false); return; }
+    } else {
+      // Создание
+      const { error: err } = await supabase.from('modules')
+        .insert({ school_id: schoolId, number: nextNumber, title: title.trim(), description: desc.trim() || null, content: content.trim() || null, created_by: currentUser.id });
+      if (err) { setError(err.message); setSaving(false); return; }
+    }
+
+    onSaved();
+    onClose();
+  };
+
+  return (
+    <div style={MS.overlay} onClick={onClose}>
+      <div style={{ ...MS.modal, width: 560 }} onClick={e => e.stopPropagation()}>
+        <div style={MS.header}>
+          <span style={MS.title}>{module ? '✏️ Редактировать модуль' : `➕ Новый модуль ${nextNumber}`}</span>
+          <button onClick={onClose} style={MS.close}>×</button>
+        </div>
+        <div style={MS.body}>
+          <div style={MS.field}>
+            <label style={MS.label}>Название модуля *</label>
+            <input value={title} onChange={e => setTitle(e.target.value)}
+              placeholder="Например: Техники активного слушания"
+              style={{ ...MS.inputStyle }} />
+          </div>
+          <div style={MS.field}>
+            <label style={MS.label}>Краткое описание</label>
+            <textarea value={desc} onChange={e => setDesc(e.target.value)}
+              placeholder="Что изучат ученики в этом модуле..."
+              rows={2} style={{ ...MS.inputStyle, resize: 'vertical' }} />
+          </div>
+          <div style={MS.field}>
+            <label style={MS.label}>Содержание / материалы урока</label>
+            <textarea value={content} onChange={e => setContent(e.target.value)}
+              placeholder="Основные темы, ссылки на материалы, конспект урока..."
+              rows={6} style={{ ...MS.inputStyle, resize: 'vertical' }} />
+          </div>
+          {error && <div style={MS.error}>{error}</div>}
+        </div>
+        <div style={MS.footer}>
+          <button onClick={onClose} style={MS.btnCancel}>Отмена</button>
+          <button onClick={handleSave} disabled={saving} style={MS.btnPrimary}>
+            {saving ? 'Сохраняю...' : '💾 Сохранить'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Обзор всех школ для администратора ──────────────────────
 function AdminSchoolsOverview() {
   return (
     <div style={{ padding: 24, overflowY: 'auto', height: '100%' }}>
       <h2 style={{ fontSize: 18, fontWeight: 700, marginBottom: 20 }}>Все школы Терра</h2>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 14 }}>
         {SCHOOLS.map(s => (
-          <div key={s.id} className="card" style={{ cursor: 'pointer' }}>
+          <div key={s.id} className="card">
             <div style={{ padding: '14px 16px', display: 'flex', gap: 12, alignItems: 'center' }}>
               <div style={{ width: 44, height: 44, borderRadius: 12, background: `${s.color}18`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22 }}>{s.icon}</div>
               <div style={{ flex: 1, minWidth: 0 }}>
@@ -194,28 +340,34 @@ function AdminSchoolsOverview() {
   );
 }
 
-// ── Главный компонент ───────────────────────────────────────
+// ── Главный компонент ────────────────────────────────────────
 export default function SchoolsCabinet() {
   const { currentUser } = useApp();
   const role = currentUser?.role;
 
-  const [activeTab,      setActiveTab]      = useState('overview');
-  const [tasks,          setTasks]          = useState([]);
-  const [students,       setStudents]       = useState([]);
-  const [loadingTasks,   setLoadingTasks]   = useState(false);
-  const [submitTask,     setSubmitTask]     = useState(null);
-  const [showCreateTask, setShowCreateTask] = useState(false);
+  const [activeTab,       setActiveTab]       = useState('overview');
+  const [tasks,           setTasks]           = useState([]);
+  const [students,        setStudents]        = useState([]);
+  const [studentMap,      setStudentMap]      = useState({});
+  const [modules,         setModules]         = useState([]);
+  const [loadingTasks,    setLoadingTasks]    = useState(false);
+  const [loadingModules,  setLoadingModules]  = useState(false);
+  const [submitTask,      setSubmitTask]      = useState(null);
+  const [gradeTask,       setGradeTask]       = useState(null);
+  const [showCreateTask,  setShowCreateTask]  = useState(false);
+  const [moduleModal,     setModuleModal]     = useState(null); // null | 'new' | module object
 
-  const schoolId      = currentUser?.school_id || currentUser?.schoolId;
+  const schoolId      = currentUser?.school_id;
   const school        = SCHOOLS.find(s => s.id === schoolId);
-  const currentModule = currentUser?.current_module || currentUser?.currentModule || 1;
-  const totalModules  = school?.modules || 8;
-  const progress      = Math.round((currentModule / totalModules) * 100);
+  const currentModule = currentUser?.current_module || 1;
+  const totalModules  = modules.length || school?.modules || 1;
+  const progress      = totalModules > 0 ? Math.round((currentModule / totalModules) * 100) : 0;
 
-  // Загрузить задания
+  // ── Загрузка заданий ──────────────────────────────────────
   const loadTasks = useCallback(async () => {
     if (!schoolId) return;
     setLoadingTasks(true);
+
     let query = supabase
       .from('tasks')
       .select('*')
@@ -226,12 +378,13 @@ export default function SchoolsCabinet() {
       query = query.eq('assigned_to', currentUser.id);
     }
 
-    const { data } = await query;
+    const { data, error } = await query;
+    if (error) console.error('loadTasks error:', error.message);
     setTasks(data || []);
     setLoadingTasks(false);
-  }, [schoolId, role, currentUser]);
+  }, [schoolId, role, currentUser?.id]);
 
-  // Загрузить учеников (для преподавателя)
+  // ── Загрузка учеников ─────────────────────────────────────
   const loadStudents = useCallback(async () => {
     if (!schoolId || role !== 'teacher') return;
     const { data } = await supabase
@@ -239,13 +392,48 @@ export default function SchoolsCabinet() {
       .select('*')
       .eq('school_id', schoolId)
       .eq('role', 'student');
-    setStudents(data || []);
+    const list = data || [];
+    setStudents(list);
+    // Карта id -> profile для быстрого поиска имени
+    const map = {};
+    list.forEach(s => { map[s.id] = s; });
+    setStudentMap(map);
   }, [schoolId, role]);
+
+  // ── Загрузка модулей ──────────────────────────────────────
+  const loadModules = useCallback(async () => {
+    if (!schoolId) return;
+    setLoadingModules(true);
+    const { data } = await supabase
+      .from('modules')
+      .select('*')
+      .eq('school_id', schoolId)
+      .order('number', { ascending: true });
+    setModules(data || []);
+    setLoadingModules(false);
+  }, [schoolId]);
 
   useEffect(() => {
     loadTasks();
     loadStudents();
-  }, [loadTasks, loadStudents]);
+    loadModules();
+  }, [loadTasks, loadStudents, loadModules]);
+
+  // ── Обновить текущий модуль ученика ───────────────────────
+  const setStudentModule = async (moduleNumber) => {
+    await supabase
+      .from('profiles')
+      .update({ current_module: moduleNumber })
+      .eq('id', currentUser.id);
+    window.location.reload(); // обновляем страницу чтобы подхватить новое значение
+  };
+
+  // ── Удалить модуль ────────────────────────────────────────
+  const deleteModule = async (moduleId) => {
+    if (!window.confirm('Удалить этот модуль?')) return;
+    await supabase.from('modules').delete().eq('id', moduleId);
+    loadModules();
+  };
 
   if (role === 'admin') return <AdminSchoolsOverview />;
 
@@ -258,20 +446,21 @@ export default function SchoolsCabinet() {
     );
   }
 
-  // Статусы заданий
-  const tasksDone    = tasks.filter(t => t.status === 'done').length;
-  const tasksPending = tasks.filter(t => ['pending', 'submitted'].includes(t.status)).length;
+  const tasksDone      = tasks.filter(t => t.status === 'done').length;
+  const tasksSubmitted = tasks.filter(t => t.status === 'submitted').length;
+  const tasksPending   = tasks.filter(t => t.status === 'pending').length;
 
   const statusInfo = {
-    done:      { icon: '✅', label: 'Проверено',             color: '#16A34A' },
-    submitted: { icon: '🟡', label: 'Сдано, ждёт проверки', color: '#D97706' },
-    pending:   { icon: '📝', label: 'Не сдано',              color: '#C9922A' },
-    overdue:   { icon: '🔴', label: 'Просрочено',            color: '#DC2626' },
+    done:      { icon: '✅', label: 'Проверено',              color: '#16A34A' },
+    submitted: { icon: '🟡', label: 'Сдано, ждёт проверки',  color: '#D97706' },
+    pending:   { icon: '📝', label: 'Не сдано',               color: '#C9922A' },
+    overdue:   { icon: '🔴', label: 'Просрочено',             color: '#DC2626' },
   };
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
-      {/* Шапка школы */}
+
+      {/* Шапка */}
       <div style={{ padding: '20px 24px 0', borderBottom: '1px solid var(--border)', background: '#fff', flexShrink: 0 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 16 }}>
           <div style={{ width: 52, height: 52, borderRadius: 14, background: `${school.color}18`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 26, flexShrink: 0 }}>
@@ -281,7 +470,7 @@ export default function SchoolsCabinet() {
             <h2 style={{ fontSize: 18, fontWeight: 700 }}>{school.name}</h2>
             <div style={{ fontSize: 13, color: 'var(--text3)', marginTop: 3 }}>
               {role === 'teacher'
-                ? `${students.length} учеников`
+                ? `${students.length} учеников · ${modules.length} модулей`
                 : `Модуль ${currentModule} из ${totalModules}`}
             </div>
           </div>
@@ -297,9 +486,10 @@ export default function SchoolsCabinet() {
           )}
 
           {role === 'teacher' && (
-            <button onClick={() => setShowCreateTask(true)} style={BS.primary}>
-              📝 Создать задание
-            </button>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button onClick={() => setModuleModal('new')} style={BS.ghost}>➕ Модуль</button>
+              <button onClick={() => setShowCreateTask(true)} style={BS.primary}>📝 Задание</button>
+            </div>
           )}
         </div>
 
@@ -307,6 +497,7 @@ export default function SchoolsCabinet() {
         <div className="tabs">
           {[
             ['overview',  '📊 Обзор'],
+            ['modules',   '📋 Модули'],
             ['homework',  '📝 Задания'],
             ...(role === 'teacher' ? [['students', '👥 Ученики']] : []),
           ].map(([t, l]) => (
@@ -315,31 +506,58 @@ export default function SchoolsCabinet() {
         </div>
       </div>
 
-      {/* Контент вкладок */}
+      {/* Контент */}
       <div style={{ flex: 1, overflowY: 'auto', padding: '20px 24px' }}>
 
-        {/* ОБЗОР */}
+        {/* ── ОБЗОР ── */}
         {activeTab === 'overview' && (
           <div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 14, marginBottom: 24 }}>
               {role === 'student' ? (
                 <>
-                  <StatCard icon="📚" label="Текущий модуль" value={`${currentModule} из ${totalModules}`} />
-                  <StatCard icon="✅" label="Заданий сдано"  value={`${tasksDone} из ${tasks.length}`} />
-                  <StatCard icon="📝" label="Ожидают сдачи"  value={tasksPending} />
+                  <StatCard icon="📚" label="Текущий модуль"  value={`${currentModule} из ${totalModules}`} />
+                  <StatCard icon="✅" label="Заданий сдано"   value={`${tasksDone} из ${tasks.length}`} />
+                  <StatCard icon="📝" label="Ожидают сдачи"   value={tasksPending} />
                 </>
               ) : (
                 <>
-                  <StatCard icon="👥" label="Учеников"         value={students.length || 0} />
-                  <StatCard icon="📝" label="Активных заданий" value={tasks.filter(t => t.status === 'pending').length} />
-                  <StatCard icon="🟡" label="Ждут проверки"    value={tasks.filter(t => t.status === 'submitted').length} />
+                  <StatCard icon="👥" label="Учеников"          value={students.length} />
+                  <StatCard icon="🟡" label="Ждут проверки"     value={tasksSubmitted} />
+                  <StatCard icon="📋" label="Модулей создано"   value={modules.length} />
                 </>
               )}
             </div>
 
+            {/* Задания ждут проверки — для преподавателя */}
+            {role === 'teacher' && tasksSubmitted > 0 && (
+              <div className="card" style={{ marginBottom: 16, border: '1px solid #FDE68A', background: '#FFFBEB' }}>
+                <div className="card-header">
+                  <span className="card-title">🟡 Ждут проверки ({tasksSubmitted})</span>
+                </div>
+                <div className="card-body">
+                  {tasks.filter(t => t.status === 'submitted').map(task => (
+                    <div key={task.id} style={{ padding: '10px 0', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'flex-start', gap: 12 }}>
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontSize: 13, fontWeight: 500 }}>{task.title}</div>
+                        <div style={{ fontSize: 12, color: 'var(--text3)', marginTop: 2 }}>
+                          Ученик: {studentMap[task.assigned_to]?.name || task.assigned_to?.slice(0, 8) + '...'}
+                        </div>
+                        {task.answer && (
+                          <div style={{ fontSize: 12, color: 'var(--text2)', marginTop: 4, padding: '6px 10px', background: 'var(--bg3)', borderRadius: 6, lineHeight: 1.5 }}>
+                            💬 {task.answer}
+                          </div>
+                        )}
+                      </div>
+                      <button onClick={() => setGradeTask(task)} style={BS.primary}>✓ Проверить</button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {/* Текущее задание для ученика */}
-            {role === 'student' && tasks.filter(t => t.status === 'pending').length > 0 && (
-              <div className="card" style={{ border: `1px solid ${school.color}30`, background: `${school.color}06`, marginBottom: 16 }}>
+            {role === 'student' && tasksPending > 0 && (
+              <div className="card" style={{ border: `1px solid ${school.color}30`, background: `${school.color}06` }}>
                 <div className="card-header"><span className="card-title">📝 Текущее задание</span></div>
                 <div className="card-body">
                   {tasks.filter(t => t.status === 'pending').slice(0, 1).map(task => (
@@ -353,31 +571,7 @@ export default function SchoolsCabinet() {
                           ⏰ Дедлайн: {new Date(task.deadline).toLocaleDateString('ru')}
                         </div>
                       )}
-                      <button onClick={() => setSubmitTask(task)} style={BS.primary}>
-                        📤 Сдать задание
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Задания ждут проверки — для преподавателя */}
-            {role === 'teacher' && tasks.filter(t => t.status === 'submitted').length > 0 && (
-              <div className="card" style={{ border: '1px solid #FDE68A', background: '#FFFBEB' }}>
-                <div className="card-header"><span className="card-title">🟡 Ждут проверки</span></div>
-                <div className="card-body">
-                  {tasks.filter(t => t.status === 'submitted').map(task => (
-                    <div key={task.id} style={{ padding: '10px 0', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: 12 }}>
-                      <div style={{ flex: 1 }}>
-                        <div style={{ fontSize: 13, fontWeight: 500 }}>{task.title}</div>
-                        {task.answer && (
-                          <div style={{ fontSize: 12, color: 'var(--text2)', marginTop: 4, lineHeight: 1.5 }}>
-                            💬 {task.answer}
-                          </div>
-                        )}
-                      </div>
-                      <button onClick={() => handleGradeTask(task.id)} style={BS.ghost}>✓ Проверить</button>
+                      <button onClick={() => setSubmitTask(task)} style={BS.primary}>📤 Сдать задание</button>
                     </div>
                   ))}
                 </div>
@@ -386,26 +580,130 @@ export default function SchoolsCabinet() {
           </div>
         )}
 
-        {/* ЗАДАНИЯ */}
+        {/* ── МОДУЛИ ── */}
+        {activeTab === 'modules' && (
+          <div>
+            {role === 'teacher' && (
+              <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 16 }}>
+                <button onClick={() => setModuleModal('new')} style={BS.primary}>➕ Добавить модуль</button>
+              </div>
+            )}
+
+            {loadingModules && (
+              <div style={{ textAlign: 'center', color: 'var(--text3)', padding: 40 }}>Загрузка модулей...</div>
+            )}
+
+            {!loadingModules && modules.length === 0 && (
+              <div className="empty-state" style={{ padding: 60 }}>
+                <div className="icon">📋</div>
+                <p>{role === 'teacher' ? 'Модулей пока нет. Нажмите «Добавить модуль» чтобы создать первый.' : 'Преподаватель ещё не добавил модули.'}</p>
+              </div>
+            )}
+
+            {modules.map(mod => {
+              const isDone    = mod.number < currentModule;
+              const isCurrent = mod.number === currentModule;
+
+              return (
+                <div key={mod.id} className="card" style={{
+                  marginBottom: 10,
+                  borderLeft: isCurrent ? `3px solid ${school.color}` : isDone ? '3px solid #16A34A' : '3px solid var(--border)',
+                }}>
+                  <div style={{ padding: '14px 16px', display: 'flex', alignItems: 'flex-start', gap: 14 }}>
+                    {/* Номер модуля */}
+                    <div style={{
+                      width: 36, height: 36, borderRadius: '50%', flexShrink: 0,
+                      background: isDone ? '#16A34A' : isCurrent ? school.color : 'var(--bg3)',
+                      color: isDone || isCurrent ? '#fff' : 'var(--text3)',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      fontSize: 14, fontWeight: 700,
+                    }}>
+                      {isDone ? '✓' : mod.number}
+                    </div>
+
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontSize: 14, fontWeight: isCurrent ? 700 : 500 }}>
+                        Модуль {mod.number}: {mod.title}
+                      </div>
+                      {mod.description && (
+                        <div style={{ fontSize: 13, color: 'var(--text2)', marginTop: 4, lineHeight: 1.5 }}>
+                          {mod.description}
+                        </div>
+                      )}
+                      {mod.content && isCurrent && (
+                        <div style={{ fontSize: 13, color: 'var(--text2)', marginTop: 8, padding: '10px 12px', background: 'var(--bg2)', borderRadius: 8, lineHeight: 1.6, borderLeft: `3px solid ${school.color}` }}>
+                          {mod.content}
+                        </div>
+                      )}
+                      <div style={{ fontSize: 12, color: isDone ? '#16A34A' : isCurrent ? school.color : 'var(--text3)', marginTop: 6 }}>
+                        {isDone ? '✓ Завершён' : isCurrent ? '▶ Текущий модуль' : 'Предстоит'}
+                      </div>
+                    </div>
+
+                    <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
+                      {/* Кнопка «Начать/Завершить» для ученика */}
+                      {role === 'student' && isCurrent && mod.number < (modules[modules.length - 1]?.number || 999) && (
+                        <button
+                          onClick={() => setStudentModule(mod.number + 1)}
+                          style={BS.primary}>
+                          Завершить →
+                        </button>
+                      )}
+                      {role === 'student' && !isCurrent && !isDone && mod.number === currentModule + 1 && (
+                        <button onClick={() => setStudentModule(mod.number)} style={BS.ghost}>Начать</button>
+                      )}
+
+                      {/* Кнопки редактирования для преподавателя */}
+                      {role === 'teacher' && (
+                        <>
+                          <button onClick={() => setModuleModal(mod)} style={BS.ghost}>✏️</button>
+                          <button onClick={() => deleteModule(mod.id)} style={{ ...BS.ghost, color: '#DC2626', borderColor: '#FCA5A5' }}>🗑</button>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        {/* ── ЗАДАНИЯ ── */}
         {activeTab === 'homework' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {role === 'teacher' && (
+              <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 4 }}>
+                <button onClick={() => setShowCreateTask(true)} style={BS.primary}>📝 Создать задание</button>
+              </div>
+            )}
+
             {loadingTasks && (
               <div style={{ textAlign: 'center', color: 'var(--text3)', padding: 40 }}>Загрузка...</div>
             )}
+
             {!loadingTasks && tasks.length === 0 && (
               <div className="empty-state" style={{ padding: 60 }}>
                 <div className="icon">📝</div>
                 <p>{role === 'teacher' ? 'Заданий пока нет. Создайте первое!' : 'Заданий пока нет.'}</p>
               </div>
             )}
+
             {tasks.map(task => {
               const st = statusInfo[task.status] || statusInfo.pending;
               return (
                 <div key={task.id} className="card" style={{ borderLeft: `3px solid ${st.color}` }}>
                   <div style={{ padding: '12px 16px', display: 'flex', alignItems: 'flex-start', gap: 12 }}>
-                    <span style={{ fontSize: 20 }}>{st.icon}</span>
+                    <span style={{ fontSize: 20, flexShrink: 0 }}>{st.icon}</span>
                     <div style={{ flex: 1 }}>
                       <div style={{ fontSize: 13, fontWeight: 500 }}>{task.title}</div>
+
+                      {/* Показываем имя ученика для преподавателя */}
+                      {role === 'teacher' && task.assigned_to && (
+                        <div style={{ fontSize: 12, color: 'var(--text3)', marginTop: 2 }}>
+                          Ученик: {studentMap[task.assigned_to]?.name || '—'}
+                        </div>
+                      )}
+
                       {task.description && (
                         <div style={{ fontSize: 12, color: 'var(--text2)', marginTop: 3, lineHeight: 1.5 }}>{task.description}</div>
                       )}
@@ -426,8 +724,8 @@ export default function SchoolsCabinet() {
                         </div>
                       )}
                       {task.feedback && (
-                        <div style={{ fontSize: 12, color: '#16A34A', marginTop: 6 }}>
-                          ✅ Отзыв преподавателя: {task.feedback}
+                        <div style={{ fontSize: 12, color: '#16A34A', marginTop: 4 }}>
+                          ✅ Отзыв: {task.feedback}
                         </div>
                       )}
                       {task.grade && (
@@ -436,11 +734,13 @@ export default function SchoolsCabinet() {
                         </div>
                       )}
                     </div>
+
+                    {/* Кнопки действий */}
                     {role === 'student' && task.status === 'pending' && (
                       <button onClick={() => setSubmitTask(task)} style={BS.primary}>Сдать</button>
                     )}
                     {role === 'teacher' && task.status === 'submitted' && (
-                      <GradeButton task={task} onGraded={loadTasks} />
+                      <button onClick={() => setGradeTask(task)} style={BS.primary}>✓ Проверить</button>
                     )}
                   </div>
                 </div>
@@ -449,34 +749,32 @@ export default function SchoolsCabinet() {
           </div>
         )}
 
-        {/* УЧЕНИКИ (для преподавателя) */}
+        {/* ── УЧЕНИКИ (преподаватель) ── */}
         {activeTab === 'students' && role === 'teacher' && (
           <div className="card">
             <div className="card-header">
               <span className="card-title">Ученики школы</span>
-              <button onClick={loadStudents} style={BS.ghost}>🔄</button>
+              <button onClick={loadStudents} style={BS.ghost}>🔄 Обновить</button>
             </div>
             <div className="card-body">
               {students.length === 0 ? (
-                <div style={{ textAlign: 'center', color: 'var(--text3)', padding: 30 }}>
-                  Учеников пока нет
-                </div>
+                <div style={{ textAlign: 'center', color: 'var(--text3)', padding: 30 }}>Учеников пока нет</div>
               ) : students.map(u => (
                 <div key={u.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 0', borderBottom: '1px solid var(--border)' }}>
                   <div className="avatar avatar-sm" style={{ background: u.color || '#888' }}>{u.initials || '?'}</div>
                   <div style={{ flex: 1 }}>
                     <div style={{ fontSize: 13, fontWeight: 500 }}>{u.name}</div>
                     <div style={{ fontSize: 12, color: 'var(--text3)' }}>
-                      Модуль {u.current_module || 1} из {totalModules}
+                      Модуль {u.current_module || 1} из {modules.length || totalModules}
                     </div>
                   </div>
                   <div style={{ width: 100 }}>
                     <div className="progress-bar">
-                      <div className="progress-fill" style={{ width: `${Math.round(((u.current_module || 1) / totalModules) * 100)}%` }} />
+                      <div className="progress-fill" style={{ width: `${Math.round(((u.current_module || 1) / (modules.length || totalModules)) * 100)}%` }} />
                     </div>
                   </div>
                   <span style={{ fontSize: 12, color: 'var(--text3)', width: 32, textAlign: 'right' }}>
-                    {Math.round(((u.current_module || 1) / totalModules) * 100)}%
+                    {Math.round(((u.current_module || 1) / (modules.length || totalModules)) * 100)}%
                   </span>
                 </div>
               ))}
@@ -493,65 +791,39 @@ export default function SchoolsCabinet() {
           onSubmitted={loadTasks}
         />
       )}
+      {gradeTask && (
+        <GradeModal
+          task={gradeTask}
+          studentName={studentMap[gradeTask.assigned_to]?.name}
+          onClose={() => setGradeTask(null)}
+          onGraded={() => { loadTasks(); setGradeTask(null); }}
+        />
+      )}
       {showCreateTask && (
         <CreateTaskModal
           schoolId={schoolId}
-          streamNumber={currentUser?.stream_number}
+          modules={modules}
           onClose={() => setShowCreateTask(false)}
           onCreated={loadTasks}
+        />
+      )}
+      {moduleModal && (
+        <ModuleModal
+          module={moduleModal === 'new' ? null : moduleModal}
+          schoolId={schoolId}
+          nextNumber={modules.length + 1}
+          onClose={() => setModuleModal(null)}
+          onSaved={loadModules}
         />
       )}
     </div>
   );
 }
 
-// ── Кнопка оценить задание ──────────────────────────────────
-function GradeButton({ task, onGraded }) {
-  const [open,     setOpen]     = useState(false);
-  const [grade,    setGrade]    = useState('5');
-  const [feedback, setFeedback] = useState('');
-  const [saving,   setSaving]   = useState(false);
-
-  const handleGrade = async () => {
-    setSaving(true);
-    await supabase.from('tasks').update({
-      status:   'done',
-      grade:    parseInt(grade),
-      feedback: feedback.trim() || null,
-    }).eq('id', task.id);
-    onGraded();
-    setOpen(false);
-    setSaving(false);
-  };
-
-  if (!open) {
-    return <button onClick={() => setOpen(true)} style={BS.primary}>✓ Проверить</button>;
-  }
-
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 6, minWidth: 180 }}>
-      <select value={grade} onChange={e => setGrade(e.target.value)}
-        style={{ padding: '5px 8px', borderRadius: 6, border: '1px solid var(--border2)', fontSize: 13, background: '#fff' }}>
-        {[5,4,3,2,1].map(g => <option key={g} value={g}>{g}/5 ⭐</option>)}
-      </select>
-      <input value={feedback} onChange={e => setFeedback(e.target.value)}
-        placeholder="Отзыв (необязательно)"
-        style={{ padding: '5px 8px', borderRadius: 6, border: '1px solid var(--border2)', fontSize: 12, fontFamily: 'inherit', outline: 'none' }} />
-      <div style={{ display: 'flex', gap: 6 }}>
-        <button onClick={() => setOpen(false)} style={BS.ghost}>✕</button>
-        <button onClick={handleGrade} disabled={saving} style={BS.primary}>{saving ? '...' : 'Сохранить'}</button>
-      </div>
-    </div>
-  );
-}
-
-// ── Стили кнопок ────────────────────────────────────────────
 const BS = {
   primary: { padding: '7px 14px', borderRadius: 8, background: '#C9922A', color: '#fff', border: 'none', fontSize: 12, cursor: 'pointer', fontFamily: 'inherit', fontWeight: 500, flexShrink: 0 },
   ghost:   { padding: '6px 12px', borderRadius: 8, background: 'var(--bg2)', color: 'var(--text2)', border: '1px solid var(--border)', fontSize: 12, cursor: 'pointer', fontFamily: 'inherit', flexShrink: 0 },
 };
-
-// ── Стили модалок ────────────────────────────────────────────
 const MS = {
   overlay:    { position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 },
   modal:      { background: '#fff', borderRadius: 14, width: 480, maxWidth: '92vw', boxShadow: '0 8px 40px rgba(0,0,0,0.18)', display: 'flex', flexDirection: 'column', maxHeight: '90vh' },
@@ -562,7 +834,7 @@ const MS = {
   footer:     { padding: '14px 20px', borderTop: '1px solid var(--border)', display: 'flex', justifyContent: 'flex-end', gap: 10 },
   field:      { marginBottom: 14 },
   label:      { display: 'block', fontSize: 11, fontWeight: 600, color: '#6B7280', textTransform: 'uppercase', letterSpacing: '0.4px', marginBottom: 6 },
-  input:      { width: '100%', padding: '9px 12px', border: '1px solid #D1D5DB', borderRadius: 8, fontSize: 13, outline: 'none', fontFamily: 'inherit', boxSizing: 'border-box' },
+  inputStyle: { width: '100%', padding: '9px 12px', border: '1px solid #D1D5DB', borderRadius: 8, fontSize: 13, outline: 'none', fontFamily: 'inherit', boxSizing: 'border-box' },
   error:      { color: '#DC2626', fontSize: 13, marginTop: 8, padding: '8px 12px', background: '#FEF2F2', borderRadius: 6 },
   btnCancel:  { padding: '8px 16px', borderRadius: 8, border: '1px solid #D1D5DB', background: '#fff', fontSize: 13, cursor: 'pointer', fontFamily: 'inherit' },
   btnPrimary: { padding: '8px 20px', borderRadius: 8, border: 'none', background: '#C9922A', color: '#fff', fontSize: 13, cursor: 'pointer', fontFamily: 'inherit', fontWeight: 500 },
