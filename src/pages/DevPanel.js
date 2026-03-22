@@ -14,7 +14,7 @@ const ROLES = [
 ];
 
 export default function DevPanel() {
-  const { currentUser, fetchProfile, setActiveView } = useApp();
+  const { currentUser, fetchProfile, setCurrentUser, setActiveView } = useApp();
   const [saving,      setSaving]      = useState(false);
   const [savedRole,   setSavedRole]   = useState(null);
   const [schoolId,    setSchoolId]    = useState(currentUser?.school_id || '');
@@ -45,19 +45,28 @@ export default function DevPanel() {
       return;
     }
 
-    // Перезагружаем профиль — currentUser обновится
-    await fetchProfile(currentUser.id);
+    // Перезагружаем профиль напрямую из базы и обновляем currentUser
+    const { data: fresh } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', currentUser.id)
+      .single();
+
+    if (fresh) {
+      setCurrentUser(fresh);
+    }
 
     setSavedRole(role);
     setSaving(false);
 
     // Переходим на нужный экран
     setTimeout(() => {
-      if (role === 'admin')   setActiveView('dashboard');
+      if (role === 'admin')                          setActiveView('dashboard');
+      else if (role === 'developer')                 setActiveView('devpanel');
       else if (['student','teacher'].includes(role)) setActiveView('schools');
       else if (['mentor','mentee'].includes(role))   setActiveView('mentoring');
       else setActiveView('chat');
-    }, 800);
+    }, 300);
   };
 
   return (
