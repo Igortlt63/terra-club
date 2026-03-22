@@ -89,16 +89,10 @@ function getNavItems(role) {
     ]});
   }
 
-  // Панель разработчика
-  if (role === 'developer') {
-    items.push({ section: 'Разработка', items: [
-      { icon: '🛠️', label: 'Панель разработчика', view: 'devpanel' },
-    ]});
-  }
-
   // Профиль — для всех
   items.push({ section: 'Аккаунт', items: [
-    { icon: '👤', label: 'Мой профиль', view: 'profile' },
+    { icon: '👤', label: 'Мой профиль',        view: 'profile'   },
+    { icon: '🛠️', label: 'Панель разработчика', view: 'devpanel'  },
   ]});
 
   return items;
