@@ -1,118 +1,512 @@
+/* ═══════════════════════════════════════════════════════════
+   ТЕРРА КЛУБ — iOS / macOS Design System
+   Цвета: белый, синий, голубой — стиль Apple
+   ═══════════════════════════════════════════════════════════ */
+
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
-  --gold: #C9922A;
-  --gold-light: #E8A83E;
-  --gold-dim: rgba(201,146,42,0.12);
-  --gold-border: rgba(201,146,42,0.3);
-  --sidebar-bg: #0F1117;
-  --sidebar-border: rgba(255,255,255,0.07);
-  --sidebar-text: rgba(255,255,255,0.55);
+  /* ── Основные цвета Apple Blue ── */
+  --blue:        #007AFF;
+  --blue-light:  #3395FF;
+  --blue-dim:    rgba(0,122,255,0.10);
+  --blue-border: rgba(0,122,255,0.25);
+  --teal:        #32ADE6;
+  --teal-dim:    rgba(50,173,230,0.10);
+
+  /* ── Фоны (iOS layered backgrounds) ── */
+  --bg:          #FFFFFF;
+  --bg2:         #F2F2F7;   /* iOS systemGray6 */
+  --bg3:         #E5E5EA;   /* iOS systemGray5 */
+  --bg-blur:     rgba(255,255,255,0.85);
+
+  /* ── Текст ── */
+  --text:        #000000;
+  --text2:       #3C3C43;   /* iOS label secondary */
+  --text3:       #8E8E93;   /* iOS label tertiary */
+  --text4:       #C7C7CC;   /* iOS label quaternary */
+
+  /* ── Границы ── */
+  --border:      rgba(60,60,67,0.13);
+  --border2:     rgba(60,60,67,0.20);
+  --border3:     rgba(60,60,67,0.06);
+
+  /* ── Семантические ── */
+  --green:       #34C759;   /* iOS green */
+  --green-dim:   rgba(52,199,89,0.12);
+  --red:         #FF3B30;   /* iOS red */
+  --red-dim:     rgba(255,59,48,0.10);
+  --orange:      #FF9500;
+  --orange-dim:  rgba(255,149,0,0.10);
+  --yellow:      #FFCC00;
+  --purple:      #AF52DE;
+
+  /* ── Сайдбар (тёмный, как macOS) ── */
+  --sidebar-bg:         #1C1C1E;   /* iOS systemGray1 dark */
+  --sidebar-bg2:        #2C2C2E;
+  --sidebar-text:       rgba(255,255,255,0.55);
   --sidebar-text-hover: rgba(255,255,255,0.88);
-  --sidebar-active-bg: rgba(201,146,42,0.1);
-  --bg: #FFFFFF;
-  --bg2: #F8F8F6;
-  --bg3: #F1EFE8;
-  --border: rgba(0,0,0,0.08);
-  --border2: rgba(0,0,0,0.14);
-  --text: #1A1A1A;
-  --text2: #5A5A5A;
-  --text3: #9A9A9A;
-  --green: #16A34A;
-  --red: #DC2626;
-  --blue: #2563EB;
-  --purple: #7C3AED;
-  --radius-sm: 6px;
-  --radius: 10px;
-  --radius-lg: 14px;
-  --shadow: 0 1px 4px rgba(0,0,0,0.08);
-  --shadow-md: 0 4px 16px rgba(0,0,0,0.1);
+  --sidebar-active-bg:  rgba(0,122,255,0.18);
+  --sidebar-border:     rgba(255,255,255,0.08);
+
+  /* ── Радиусы (iOS style) ── */
+  --radius-xs: 6px;
+  --radius-sm: 10px;
+  --radius:    12px;
+  --radius-lg: 16px;
+  --radius-xl: 22px;
+
+  /* ── Тени (macOS) ── */
+  --shadow-xs: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+  --shadow:    0 2px 8px rgba(0,0,0,0.08), 0 1px 3px rgba(0,0,0,0.05);
+  --shadow-md: 0 4px 20px rgba(0,0,0,0.10), 0 2px 6px rgba(0,0,0,0.06);
+  --shadow-lg: 0 8px 40px rgba(0,0,0,0.14), 0 4px 12px rgba(0,0,0,0.08);
+
+  /* ── Высота мобильной панели ── */
+  --tab-bar-height: 56px;
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
 }
 
-html, body, #root { height: 100%; overflow: hidden; }
-body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); font-size: 14px; line-height: 1.5; -webkit-font-smoothing: antialiased; }
+/* ── Базовые стили ─────────────────────────────────────── */
+html { height: 100%; -webkit-text-size-adjust: 100%; }
+body {
+  height: 100%; overflow: hidden;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', sans-serif;
+  background: var(--bg2);
+  color: var(--text);
+  font-size: 15px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+#root { height: 100%; overflow: hidden; }
 
-/* ── Scrollbars ── */
-::-webkit-scrollbar { width: 4px; height: 4px; }
+/* ── Скроллбар ─────────────────────────────────────────── */
+::-webkit-scrollbar { width: 3px; height: 3px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 4px; }
+::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
 
-/* ── Buttons ── */
-button { cursor: pointer; border: none; font-family: inherit; font-size: 13px; transition: all 0.15s; }
-.btn-primary { background: var(--gold); color: #fff; padding: 7px 16px; border-radius: var(--radius-sm); font-weight: 500; }
-.btn-primary:hover { background: var(--gold-light); }
-.btn-secondary { background: var(--bg2); color: var(--text); padding: 7px 16px; border-radius: var(--radius-sm); border: 1px solid var(--border2); font-weight: 400; }
-.btn-secondary:hover { background: var(--bg3); }
-.btn-ghost { background: transparent; color: var(--text2); padding: 6px 12px; border-radius: var(--radius-sm); border: 1px solid var(--border); }
-.btn-ghost:hover { background: var(--bg2); color: var(--text); }
-.btn-danger { background: #FEF2F2; color: var(--red); padding: 7px 16px; border-radius: var(--radius-sm); border: 1px solid #FCA5A5; }
-.btn-danger:hover { background: #FEE2E2; }
-
-/* ── Inputs ── */
-input[type="text"], input[type="email"], input[type="password"], textarea, select {
-  width: 100%; padding: 9px 12px; border: 1px solid var(--border2); border-radius: var(--radius-sm);
-  background: var(--bg); color: var(--text); font-family: inherit; font-size: 14px; outline: none;
-  transition: border-color 0.15s;
+/* ── Кнопки ────────────────────────────────────────────── */
+button {
+  cursor: pointer; border: none;
+  font-family: inherit; font-size: 15px;
+  transition: all 0.18s cubic-bezier(0.25,0.46,0.45,0.94);
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
 }
-input:focus, textarea:focus, select:focus { border-color: var(--gold); }
+button:active { transform: scale(0.97); }
+
+.btn-primary {
+  background: var(--blue);
+  color: #fff;
+  padding: 10px 20px;
+  border-radius: var(--radius-sm);
+  font-weight: 600;
+  font-size: 15px;
+  letter-spacing: -0.1px;
+  box-shadow: 0 1px 4px rgba(0,122,255,0.25);
+}
+.btn-primary:hover  { background: var(--blue-light); }
+.btn-primary:active { background: #0062CC; }
+
+.btn-secondary {
+  background: var(--bg2);
+  color: var(--blue);
+  padding: 10px 20px;
+  border-radius: var(--radius-sm);
+  border: none;
+  font-weight: 500;
+  font-size: 15px;
+}
+.btn-secondary:hover  { background: var(--bg3); }
+
+.btn-ghost {
+  background: var(--bg2);
+  color: var(--text2);
+  padding: 7px 14px;
+  border-radius: var(--radius-sm);
+  border: none;
+  font-size: 13px;
+  font-weight: 400;
+}
+.btn-ghost:hover { background: var(--bg3); color: var(--text); }
+
+.btn-danger {
+  background: var(--red-dim);
+  color: var(--red);
+  padding: 10px 20px;
+  border-radius: var(--radius-sm);
+  border: none;
+  font-weight: 500;
+}
+.btn-danger:hover { background: rgba(255,59,48,0.18); }
+
+/* ── Инпуты ────────────────────────────────────────────── */
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="number"],
+input[type="date"],
+textarea, select {
+  width: 100%;
+  padding: 11px 14px;
+  border: 1px solid var(--border2);
+  border-radius: var(--radius-sm);
+  background: var(--bg);
+  color: var(--text);
+  font-family: inherit;
+  font-size: 15px;
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+  -webkit-appearance: none;
+  appearance: none;
+}
+input:focus, textarea:focus, select:focus {
+  border-color: var(--blue);
+  box-shadow: 0 0 0 3px rgba(0,122,255,0.15);
+}
 textarea { resize: none; }
 
-/* ── Badges / Roles ── */
-.badge { display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 20px; font-size: 11px; font-weight: 500; }
-.badge-admin { background: rgba(201,146,42,0.12); color: #92640A; border: 1px solid rgba(201,146,42,0.25); }
-.badge-teacher { background: rgba(37,99,235,0.1); color: #1D4ED8; border: 1px solid rgba(37,99,235,0.2); }
-.badge-student { background: rgba(124,58,237,0.1); color: #6D28D9; border: 1px solid rgba(124,58,237,0.2); }
-.badge-mentor { background: rgba(22,163,74,0.1); color: #15803D; border: 1px solid rgba(22,163,74,0.2); }
-.badge-mentee { background: rgba(220,38,38,0.1); color: #B91C1C; border: 1px solid rgba(220,38,38,0.2); }
-.badge-guest { background: rgba(148,163,184,0.15); color: #475569; border: 1px solid rgba(148,163,184,0.25); }
-.badge-member { background: rgba(14,165,233,0.1); color: #0369A1; border: 1px solid rgba(14,165,233,0.2); }
+/* ── Роли / Бейджи ─────────────────────────────────────── */
+.badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 3px 9px; border-radius: 20px;
+  font-size: 11px; font-weight: 600;
+  letter-spacing: 0.1px;
+}
+.badge-admin   { background: rgba(0,122,255,0.12); color: #0055CC; }
+.badge-teacher { background: rgba(50,173,230,0.12); color: #006699; }
+.badge-student { background: rgba(175,82,222,0.12); color: #7B25B8; }
+.badge-mentor  { background: rgba(52,199,89,0.12); color: #1A8C3A; }
+.badge-mentee  { background: rgba(255,149,0,0.12); color: #B36A00; }
+.badge-guest   { background: rgba(142,142,147,0.12); color: #636366; }
+.badge-member  { background: rgba(50,173,230,0.12); color: #006699; }
+.badge-developer { background: rgba(255,59,48,0.10); color: #CC2200; }
 
-/* ── Avatar ── */
-.avatar { border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 600; color: #fff; flex-shrink: 0; }
-.avatar-sm { width: 28px; height: 28px; font-size: 11px; }
-.avatar-md { width: 36px; height: 36px; font-size: 13px; }
-.avatar-lg { width: 44px; height: 44px; font-size: 16px; }
-.avatar-xl { width: 64px; height: 64px; font-size: 22px; }
+/* ── Аватар ────────────────────────────────────────────── */
+.avatar {
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 700; color: #fff;
+  flex-shrink: 0;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+}
+.avatar-sm { width: 30px; height: 30px; font-size: 11px; }
+.avatar-md { width: 38px; height: 38px; font-size: 14px; }
+.avatar-lg { width: 46px; height: 46px; font-size: 17px; }
+.avatar-xl { width: 68px; height: 68px; font-size: 24px; }
 
-/* ── Cards ── */
-.card { background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius-lg); }
-.card-header { padding: 14px 16px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
-.card-body { padding: 14px 16px; }
-.card-title { font-size: 14px; font-weight: 600; color: var(--text); }
-.card-sub { font-size: 12px; color: var(--text3); margin-top: 2px; }
+/* ── Карточки iOS ──────────────────────────────────────── */
+.card {
+  background: var(--bg);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-xs);
+  overflow: hidden;
+}
+.card-header {
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--border3);
+  display: flex; align-items: center; justify-content: space-between;
+}
+.card-body   { padding: 14px 18px; }
+.card-title  { font-size: 15px; font-weight: 600; color: var(--text); }
+.card-sub    { font-size: 13px; color: var(--text3); margin-top: 2px; }
 
-/* ── Divider ── */
-.divider { height: 1px; background: var(--border); margin: 8px 0; }
+/* ── Прогресс-бар ──────────────────────────────────────── */
+.progress-bar {
+  height: 4px; background: var(--bg3);
+  border-radius: 4px; overflow: hidden;
+}
+.progress-fill {
+  height: 100%; background: var(--blue);
+  border-radius: 4px; transition: width 0.4s ease;
+}
 
-/* ── Progress bar ── */
-.progress-bar { height: 5px; background: var(--bg3); border-radius: 3px; overflow: hidden; }
-.progress-fill { height: 100%; background: var(--gold); border-radius: 3px; transition: width 0.3s; }
+/* ── Уведомление ───────────────────────────────────────── */
+.notification {
+  position: fixed; bottom: calc(var(--tab-bar-height) + var(--safe-bottom) + 12px); left: 50%;
+  transform: translateX(-50%);
+  padding: 12px 22px; border-radius: var(--radius-xl);
+  background: rgba(28,28,30,0.92); color: #fff;
+  font-size: 14px; font-weight: 500;
+  z-index: 9999;
+  box-shadow: var(--shadow-lg);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  animation: slideUp 0.25s cubic-bezier(0.25,0.46,0.45,0.94);
+  white-space: nowrap;
+}
+.notification.success { background: rgba(52,199,89,0.92); }
+.notification.error   { background: rgba(255,59,48,0.92); }
+@keyframes slideUp {
+  from { transform: translateX(-50%) translateY(12px); opacity: 0; }
+  to   { transform: translateX(-50%) translateY(0);    opacity: 1; }
+}
 
-/* ── Notification ── */
-.notification { position: fixed; top: 16px; right: 16px; padding: 12px 18px; border-radius: var(--radius); background: #1A1A1A; color: #fff; font-size: 13px; z-index: 9999; box-shadow: var(--shadow-md); animation: slideIn 0.2s ease; }
-.notification.success { background: #15803D; }
-.notification.error { background: #DC2626; }
-@keyframes slideIn { from { transform: translateY(-8px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+/* ── Пустое состояние ──────────────────────────────────── */
+.empty-state {
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  height: 100%; gap: 12px; color: var(--text3);
+  padding: 32px;
+}
+.empty-state .icon { font-size: 44px; }
+.empty-state p { font-size: 15px; text-align: center; max-width: 240px; line-height: 1.5; }
 
-/* ── Empty state ── */
-.empty-state { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; gap: 12px; color: var(--text3); }
-.empty-state .icon { font-size: 40px; }
-.empty-state p { font-size: 14px; text-align: center; max-width: 260px; }
+/* ── Секция-лейбл (сайдбар) ────────────────────────────── */
+.section-label {
+  font-size: 11px; font-weight: 600;
+  text-transform: uppercase; letter-spacing: 0.8px;
+  color: rgba(235,235,245,0.35);
+  padding: 16px 18px 6px;
+}
 
-/* ── Section label ── */
-.section-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--text3); padding: 10px 14px 4px; }
+/* ── Вкладки iOS style ─────────────────────────────────── */
+.tabs {
+  display: flex;
+  background: var(--bg2);
+  padding: 4px;
+  border-radius: var(--radius-sm);
+  margin: 12px 18px;
+  gap: 2px;
+}
+.tab {
+  flex: 1; padding: 7px 8px;
+  font-size: 13px; font-weight: 500;
+  color: var(--text3);
+  cursor: pointer;
+  border-radius: var(--radius-xs);
+  text-align: center;
+  transition: all 0.18s;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.tab:hover { color: var(--text2); }
+.tab.active {
+  background: var(--bg);
+  color: var(--text);
+  font-weight: 600;
+  box-shadow: var(--shadow-xs);
+}
 
-/* ── Tabs ── */
-.tabs { display: flex; border-bottom: 1px solid var(--border); }
-.tab { padding: 10px 16px; font-size: 13px; color: var(--text2); cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px; transition: all 0.15s; }
-.tab:hover { color: var(--text); }
-.tab.active { color: var(--gold); border-bottom-color: var(--gold); font-weight: 500; }
+/* ── Нижняя панель навигации (мобильная) ─────────────────
+   Показывается только на экранах < 768px                 */
+.mobile-tab-bar {
+  display: none;
+  position: fixed;
+  bottom: 0; left: 0; right: 0;
+  height: calc(var(--tab-bar-height) + var(--safe-bottom));
+  padding-bottom: var(--safe-bottom);
+  background: rgba(255,255,255,0.88);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-top: 0.5px solid var(--border);
+  z-index: 900;
+  align-items: stretch;
+  justify-content: space-around;
+}
+.mobile-tab-bar-item {
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  gap: 3px; flex: 1;
+  padding: 8px 4px 4px;
+  cursor: pointer;
+  color: var(--text3);
+  font-size: 10px; font-weight: 500;
+  transition: color 0.15s;
+  -webkit-tap-highlight-color: transparent;
+}
+.mobile-tab-bar-item.active { color: var(--blue); }
+.mobile-tab-bar-item .tab-icon { font-size: 22px; line-height: 1; }
+.mobile-tab-bar-badge {
+  position: absolute; top: 6px; right: calc(50% - 16px);
+  background: var(--red); color: #fff;
+  font-size: 10px; font-weight: 700;
+  min-width: 16px; height: 16px;
+  border-radius: 8px; padding: 0 4px;
+  display: flex; align-items: center; justify-content: center;
+  border: 2px solid #fff;
+}
 
-/* ── Role label map ── */
-.role-label-admin::after { content: 'Руководство'; }
-.role-label-teacher::after { content: 'Преподаватель'; }
-.role-label-student::after { content: 'Ученик'; }
-.role-label-mentor::after { content: 'Наставник'; }
-.role-label-mentee::after { content: 'Наставляемый'; }
-.role-label-guest::after { content: 'Гость'; }
-.role-label-member::after { content: 'Участник'; }
+/* ── Мобильный заголовок страниц ─────────────────────────
+   Показывается вместо десктопного topbar на мобильных    */
+.mobile-page-header {
+  display: none;
+  padding: 12px 18px 10px;
+  background: rgba(255,255,255,0.88);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 0.5px solid var(--border);
+  position: sticky; top: 0; z-index: 100;
+}
+.mobile-page-title {
+  font-size: 17px; font-weight: 700;
+  color: var(--text);
+  letter-spacing: -0.3px;
+}
+
+/* ── Медиа-запросы ──────────────────────────────────────── */
+@media (max-width: 768px) {
+  /* Показываем мобильную панель */
+  .mobile-tab-bar { display: flex; }
+  .mobile-page-header { display: block; }
+
+  /* Скрываем десктопный сайдбар */
+  .desktop-sidebar { display: none !important; }
+
+  /* Контент занимает всю ширину и учитывает нижнюю панель */
+  .main-content-area {
+    padding-bottom: calc(var(--tab-bar-height) + var(--safe-bottom)) !important;
+  }
+
+  /* Десктопный топбар скрываем */
+  .desktop-topbar { display: none !important; }
+
+  /* Карточки — убираем боковые отступы */
+  .card { border-radius: var(--radius); }
+
+  /* Вкладки — компактнее */
+  .tab { font-size: 12px; padding: 6px 6px; }
+}
+
+@media (min-width: 769px) {
+  /* На десктопе скрываем мобильное */
+  .mobile-tab-bar    { display: none !important; }
+  .mobile-page-header { display: none !important; }
+}
+
+/* ── iOS-стиль разделитель списков ──────────────────────── */
+.ios-list-item {
+  display: flex; align-items: center; gap: 12px;
+  padding: 12px 18px;
+  background: var(--bg);
+  border-bottom: 0.5px solid var(--border3);
+  cursor: pointer;
+  transition: background 0.12s;
+  -webkit-tap-highlight-color: transparent;
+}
+.ios-list-item:last-child { border-bottom: none; }
+.ios-list-item:active { background: var(--bg2); }
+
+/* ── Модалки ────────────────────────────────────────────── */
+.modal-overlay {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.45);
+  display: flex; align-items: flex-end;  /* снизу на мобильных */
+  justify-content: center;
+  z-index: 1000;
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  animation: fadeIn 0.2s ease;
+}
+.modal-sheet {
+  background: var(--bg);
+  border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+  width: 100%; max-height: 92vh;
+  display: flex; flex-direction: column;
+  animation: slideSheet 0.3s cubic-bezier(0.25,0.46,0.45,0.94);
+  padding-bottom: var(--safe-bottom);
+}
+@media (min-width: 769px) {
+  .modal-overlay { align-items: center; }
+  .modal-sheet {
+    border-radius: var(--radius-xl);
+    max-width: 500px;
+    max-height: 85vh;
+    animation: scaleIn 0.2s cubic-bezier(0.25,0.46,0.45,0.94);
+  }
+}
+@keyframes fadeIn    { from { opacity: 0; } to { opacity: 1; } }
+@keyframes slideSheet {
+  from { transform: translateY(100%); }
+  to   { transform: translateY(0); }
+}
+@keyframes scaleIn {
+  from { transform: scale(0.95); opacity: 0; }
+  to   { transform: scale(1); opacity: 1; }
+}
+.modal-handle {
+  width: 36px; height: 4px;
+  background: var(--border2);
+  border-radius: 2px;
+  margin: 10px auto 0;
+  flex-shrink: 0;
+}
+.modal-header {
+  padding: 14px 20px 12px;
+  display: flex; align-items: center; justify-content: space-between;
+  border-bottom: 0.5px solid var(--border3);
+  flex-shrink: 0;
+}
+.modal-title  { font-size: 17px; font-weight: 700; color: var(--text); }
+.modal-close  {
+  width: 30px; height: 30px; border-radius: 50%;
+  background: var(--bg2); border: none;
+  color: var(--text3); font-size: 16px;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+}
+.modal-body   { padding: 16px 20px; overflow-y: auto; flex: 1; }
+.modal-footer {
+  padding: 12px 20px;
+  border-top: 0.5px solid var(--border3);
+  display: flex; gap: 10px; justify-content: flex-end;
+  flex-shrink: 0;
+}
+
+/* ── iOS-стиль поле формы ───────────────────────────────── */
+.form-field { margin-bottom: 16px; }
+.form-label {
+  display: block; font-size: 13px; font-weight: 600;
+  color: var(--text3); margin-bottom: 7px;
+  text-transform: uppercase; letter-spacing: 0.3px;
+}
+
+/* ── Чат ────────────────────────────────────────────────── */
+.bubble-me {
+  background: var(--blue);
+  color: #fff;
+  border-radius: 18px 4px 18px 18px;
+  padding: 10px 14px;
+  font-size: 15px; line-height: 1.45;
+  max-width: 75%;
+  word-break: break-word;
+}
+.bubble-other {
+  background: var(--bg2);
+  color: var(--text);
+  border-radius: 4px 18px 18px 18px;
+  padding: 10px 14px;
+  font-size: 15px; line-height: 1.45;
+  max-width: 75%;
+  word-break: break-word;
+}
+
+/* ── Элемент канала в сайдбаре ──────────────────────────── */
+.channel-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 9px 16px; cursor: pointer;
+  font-size: 14px; color: var(--sidebar-text);
+  border-left: 2px solid transparent;
+  transition: all 0.12s;
+  -webkit-tap-highlight-color: transparent;
+}
+.channel-item:hover { background: rgba(255,255,255,0.05); color: var(--sidebar-text-hover); }
+.channel-item.active {
+  background: var(--sidebar-active-bg);
+  color: #fff;
+  border-left-color: var(--blue);
+  font-weight: 500;
+}
+
+/* ── Скелетон-анимация загрузки ─────────────────────────── */
+@keyframes skeleton {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.4; }
+}
+.skeleton {
+  background: var(--bg3);
+  border-radius: var(--radius-xs);
+  animation: skeleton 1.4s ease infinite;
+}

@@ -4,13 +4,13 @@ import { supabase } from '../supabase';
 
 export default function LoginPage() {
   const { login } = useApp();
-  const [mode, setMode] = useState('login'); // 'login' | 'register' | 'forgot'
-  const [email, setEmail] = useState('');
+  const [mode,     setMode]     = useState('login');
+  const [email,    setEmail]    = useState('');
   const [password, setPassword] = useState('');
-  const [name, setName] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
+  const [name,     setName]     = useState('');
+  const [loading,  setLoading]  = useState(false);
+  const [error,    setError]    = useState('');
+  const [success,  setSuccess]  = useState('');
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -27,145 +27,124 @@ export default function LoginPage() {
     if (password.length < 6) { setError('Пароль минимум 6 символов'); setLoading(false); return; }
 
     const { data, error: signUpError } = await supabase.auth.signUp({
-      email,
-      password,
-      options: { data: { name } },
+      email, password, options: { data: { name } },
     });
-
     if (signUpError) {
-      setError(
-        signUpError.message === 'User already registered'
-          ? 'Этот email уже зарегистрирован. Войдите или восстановите пароль.'
-          : signUpError.message
-      );
-      setLoading(false);
-      return;
+      setError(signUpError.message === 'User already registered'
+        ? 'Этот email уже зарегистрирован'
+        : signUpError.message);
+      setLoading(false); return;
     }
-
     if (data?.user) {
-      const initials = name.trim().split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
-      const colors = ['#C9922A','#3B82F6','#8B5CF6','#22C55E','#EF4444','#F97316','#06B6D4'];
-      const color = colors[Math.floor(Math.random() * colors.length)];
-      await supabase.from('profiles').insert({
-        id: data.user.id,
-        name: name.trim(),
-        initials,
-        role: 'guest',
-        color,
-        email,
-      });
+      const initials = name.trim().split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2);
+      const colors   = ['#007AFF','#32ADE6','#34C759','#FF9500','#AF52DE','#FF3B30'];
+      const color    = colors[Math.floor(Math.random()*colors.length)];
+      await supabase.from('profiles').insert({ id: data.user.id, name: name.trim(), initials, role: 'guest', color, email });
     }
-
-    setSuccess('Аккаунт создан! Проверьте почту и подтвердите email, затем войдите.');
-    setMode('login');
-    setLoading(false);
+    setSuccess('Аккаунт создан! Проверьте почту и подтвердите email.');
+    setMode('login'); setLoading(false);
   };
 
   const handleForgot = async (e) => {
     e.preventDefault();
     setError(''); setLoading(true);
-    const { error: resetError } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: window.location.origin,
-    });
-    if (resetError) { setError(resetError.message); setLoading(false); return; }
-    setSuccess('Письмо отправлено! Проверьте почту и перейдите по ссылке для сброса пароля.');
+    const { error: err } = await supabase.auth.resetPasswordForEmail(email, { redirectTo: window.location.origin });
+    if (err) { setError(err.message); setLoading(false); return; }
+    setSuccess('Письмо отправлено! Проверьте почту.');
     setLoading(false);
   };
 
   const switchMode = (m) => { setMode(m); setError(''); setSuccess(''); };
 
   return (
-    <div style={S.page}>
-      <div style={S.left}>
-        <div style={S.brand}>
-          <div style={S.gem}>T</div>
-          <div>
-            <div style={S.brandName}>ТЕРРА</div>
-            <div style={S.brandSub}>Бизнес Клуб</div>
-          </div>
-        </div>
-        <div style={S.tagline}>
-          Объединяем начинающих предпринимателей<br />в 22 городах и 6 странах
-        </div>
-        <div style={S.stats}>
-          {[['2 847','участников'],['18','школ'],['22','города'],['6','стран']].map(([v,l]) => (
-            <div key={l} style={S.stat}>
-              <span style={S.statVal}>{v}</span>
-              <span style={S.statLabel}>{l}</span>
-            </div>
-          ))}
-        </div>
+    <div style={{
+      minHeight: '100vh', background: 'var(--bg2)',
+      display: 'flex', flexDirection: 'column', alignItems: 'center',
+      justifyContent: 'center', padding: '24px 20px',
+    }}>
+      {/* Логотип */}
+      <div style={{ textAlign: 'center', marginBottom: 32 }}>
+        <div style={{
+          width: 72, height: 72, margin: '0 auto 16px',
+          background: 'linear-gradient(135deg, #007AFF, #32ADE6)',
+          borderRadius: 22,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          fontSize: 34, fontWeight: 800, color: '#fff',
+          boxShadow: '0 4px 20px rgba(0,122,255,0.35)',
+        }}>T</div>
+        <div style={{ fontSize: 26, fontWeight: 800, color: 'var(--text)', letterSpacing: -0.5 }}>Терра Клуб</div>
+        <div style={{ fontSize: 15, color: 'var(--text3)', marginTop: 4 }}>Бизнес сообщество</div>
       </div>
 
-      <div style={S.right}>
-        <div style={S.card}>
-          <div style={{ marginBottom: 20 }}>
-            <h2 style={S.title}>
-              {mode === 'login' && 'Войти в кабинет'}
-              {mode === 'register' && 'Регистрация'}
-              {mode === 'forgot' && 'Восстановление пароля'}
-            </h2>
-            <p style={S.sub}>
-              {mode === 'login' && 'Введите email и пароль'}
-              {mode === 'register' && 'Создайте аккаунт участника'}
-              {mode === 'forgot' && 'Введите email — пришлём ссылку для сброса'}
-            </p>
+      {/* Карточка формы */}
+      <div style={{
+        width: '100%', maxWidth: 400,
+        background: 'var(--bg)',
+        borderRadius: 'var(--radius-xl)',
+        boxShadow: 'var(--shadow-lg)',
+        overflow: 'hidden',
+      }}>
+        {/* Переключатель вкладок */}
+        {mode !== 'forgot' && (
+          <div style={{ display: 'flex', padding: '16px 16px 0' }}>
+            <div className="tabs" style={{ flex: 1, margin: 0 }}>
+              {[['login','Войти'],['register','Регистрация']].map(([m,l])=>(
+                <div key={m} className={`tab${mode===m?' active':''}`} onClick={()=>switchMode(m)}>{l}</div>
+              ))}
+            </div>
           </div>
+        )}
 
-          {mode !== 'forgot' && (
-            <div style={S.tabs}>
-              <button onClick={() => switchMode('login')} style={{...S.tab, ...(mode==='login' ? S.tabActive : {})}}>
-                Войти
-              </button>
-              <button onClick={() => switchMode('register')} style={{...S.tab, ...(mode==='register' ? S.tabActive : {})}}>
-                Регистрация
-              </button>
+        <div style={{ padding: '20px 24px 28px' }}>
+          {mode === 'forgot' && (
+            <div style={{ marginBottom: 20 }}>
+              <div style={{ fontSize: 20, fontWeight: 700 }}>Восстановление пароля</div>
+              <div style={{ fontSize: 14, color: 'var(--text3)', marginTop: 4 }}>Введите email — пришлём ссылку</div>
             </div>
           )}
 
-          {error   && <div style={S.errBox}>{error}</div>}
-          {success && <div style={S.okBox}>{success}</div>}
+          {error   && <div style={S.errorBox}>{error}</div>}
+          {success && <div style={S.successBox}>{success}</div>}
 
           {mode === 'login' && (
-            <form onSubmit={handleLogin}>
-              <Field label="Email" type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="your@email.com" />
-              <Field label="Пароль" type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="••••••••" />
-              <button type="submit" disabled={loading} style={S.submitBtn}>
-                {loading ? 'Вхожу...' : 'Войти →'}
+            <form onSubmit={handleLogin} style={{ display:'flex',flexDirection:'column',gap:12 }}>
+              <Field label="Email"  type="email"    value={email}    onChange={e=>setEmail(e.target.value)}    placeholder="your@email.com" />
+              <Field label="Пароль" type="password" value={password} onChange={e=>setPassword(e.target.value)} placeholder="••••••••" />
+              <button type="submit" disabled={loading} style={{ ...S.submitBtn, marginTop: 4 }}>
+                {loading ? 'Вхожу...' : 'Войти'}
               </button>
-              <button type="button" onClick={() => switchMode('forgot')} style={S.linkBtn}>
-                Забыли пароль?
-              </button>
+              <button type="button" onClick={()=>switchMode('forgot')} style={S.linkBtn}>Забыли пароль?</button>
             </form>
           )}
 
           {mode === 'register' && (
-            <form onSubmit={handleRegister}>
-              <Field label="Имя и фамилия" type="text" value={name} onChange={e => setName(e.target.value)} placeholder="Иван Иванов" />
-              <Field label="Email" type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="your@email.com" />
-              <Field label="Пароль (минимум 6 символов)" type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="••••••••" />
-              <div style={S.hint}>
-                После регистрации придёт письмо для подтверждения email.<br />
-                Администратор назначит вашу роль в системе.
+            <form onSubmit={handleRegister} style={{ display:'flex',flexDirection:'column',gap:12 }}>
+              <Field label="Имя и фамилия" type="text"     value={name}     onChange={e=>setName(e.target.value)}     placeholder="Иван Иванов" />
+              <Field label="Email"          type="email"    value={email}    onChange={e=>setEmail(e.target.value)}    placeholder="your@email.com" />
+              <Field label="Пароль"         type="password" value={password} onChange={e=>setPassword(e.target.value)} placeholder="Минимум 6 символов" />
+              <div style={{ fontSize: 12, color: 'var(--text3)', lineHeight: 1.5, background: 'var(--bg2)', padding: '10px 12px', borderRadius: 'var(--radius-sm)' }}>
+                После регистрации придёт письмо для подтверждения email. Роль назначит администратор.
               </div>
               <button type="submit" disabled={loading} style={S.submitBtn}>
-                {loading ? 'Создаю аккаунт...' : 'Зарегистрироваться →'}
+                {loading ? 'Создаю аккаунт...' : 'Зарегистрироваться'}
               </button>
             </form>
           )}
 
           {mode === 'forgot' && (
-            <form onSubmit={handleForgot}>
-              <Field label="Email" type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="your@email.com" />
+            <form onSubmit={handleForgot} style={{ display:'flex',flexDirection:'column',gap:12 }}>
+              <Field label="Email" type="email" value={email} onChange={e=>setEmail(e.target.value)} placeholder="your@email.com" />
               <button type="submit" disabled={loading} style={S.submitBtn}>
-                {loading ? 'Отправляю...' : 'Отправить ссылку →'}
+                {loading ? 'Отправляю...' : 'Отправить ссылку'}
               </button>
-              <button type="button" onClick={() => switchMode('login')} style={S.linkBtn}>
-                ← Вернуться ко входу
-              </button>
+              <button type="button" onClick={()=>switchMode('login')} style={S.linkBtn}>← Вернуться ко входу</button>
             </form>
           )}
         </div>
+      </div>
+
+      <div style={{ marginTop: 24, fontSize: 13, color: 'var(--text4)', textAlign: 'center' }}>
+        22 города · 6 стран · Бизнес Клуб Терра
       </div>
     </div>
   );
@@ -173,40 +152,16 @@ export default function LoginPage() {
 
 function Field({ label, type, value, onChange, placeholder }) {
   return (
-    <div style={{ marginBottom: 16 }}>
-      <label style={{ display: 'block', fontSize: 12, fontWeight: 500, color: '#5A5A5A', marginBottom: 6 }}>
-        {label}
-      </label>
-      <input
-        type={type} value={value} onChange={onChange} placeholder={placeholder} required
-        style={{ width: '100%', padding: '10px 12px', border: '1px solid #D1D5DB', borderRadius: 8, fontSize: 14, outline: 'none', fontFamily: 'inherit', boxSizing: 'border-box' }}
-      />
+    <div className="form-field" style={{ marginBottom: 0 }}>
+      <label className="form-label">{label}</label>
+      <input type={type} value={value} onChange={onChange} placeholder={placeholder} required />
     </div>
   );
 }
 
 const S = {
-  page:      { display: 'flex', height: '100vh', overflow: 'hidden' },
-  left:      { flex: 1, background: 'linear-gradient(160deg, #0F1117 0%, #1A1A2E 60%, #16213E 100%)', display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: '40px 60px', gap: 32 },
-  brand:     { display: 'flex', alignItems: 'center', gap: 16 },
-  gem:       { width: 52, height: 52, background: 'linear-gradient(135deg, #C9922A, #E8A83E)', borderRadius: 14, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 28, fontWeight: 700, color: '#fff' },
-  brandName: { fontSize: 28, fontWeight: 700, color: '#E8A83E', letterSpacing: 3 },
-  brandSub:  { fontSize: 13, color: 'rgba(255,255,255,0.4)', letterSpacing: 1 },
-  tagline:   { fontSize: 20, color: 'rgba(255,255,255,0.75)', lineHeight: 1.6, fontWeight: 300 },
-  stats:     { display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 16 },
-  stat:      { display: 'flex', flexDirection: 'column', gap: 4 },
-  statVal:   { fontSize: 26, fontWeight: 700, color: '#E8A83E' },
-  statLabel: { fontSize: 12, color: 'rgba(255,255,255,0.4)' },
-  right:     { width: 460, background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 32, overflowY: 'auto' },
-  card:      { width: '100%', maxWidth: 380 },
-  title:     { fontSize: 22, fontWeight: 700, color: '#1A1A1A', marginBottom: 6 },
-  sub:       { fontSize: 14, color: '#9A9A9A' },
-  tabs:      { display: 'flex', border: '1px solid #E5E2DA', borderRadius: 10, overflow: 'hidden', marginBottom: 20 },
-  tab:       { flex: 1, padding: '10px 0', fontSize: 14, background: 'transparent', border: 'none', cursor: 'pointer', color: '#6B7280', fontFamily: 'inherit', transition: 'all 0.15s' },
-  tabActive: { background: '#C9922A', color: '#fff', fontWeight: 500 },
-  errBox:    { background: '#FEF2F2', color: '#DC2626', padding: '10px 12px', borderRadius: 8, fontSize: 13, marginBottom: 14, border: '1px solid #FCA5A5' },
-  okBox:     { background: '#F0FDF4', color: '#15803D', padding: '10px 12px', borderRadius: 8, fontSize: 13, marginBottom: 14, border: '1px solid #86EFAC' },
-  submitBtn: { width: '100%', padding: 11, fontSize: 14, marginTop: 4, borderRadius: 8, background: '#C9922A', color: '#fff', border: 'none', cursor: 'pointer', fontFamily: 'inherit', fontWeight: 500 },
-  linkBtn:   { display: 'block', width: '100%', marginTop: 12, background: 'none', border: 'none', color: '#C9922A', fontSize: 13, cursor: 'pointer', textAlign: 'center', fontFamily: 'inherit' },
-  hint:      { fontSize: 12, color: '#9A9A9A', background: '#F9F8F6', padding: '10px 12px', borderRadius: 8, lineHeight: 1.6, marginBottom: 14 },
+  errorBox:   { background: 'var(--red-dim)', color: 'var(--red)', padding: '10px 14px', borderRadius: 'var(--radius-sm)', fontSize: 14, marginBottom: 4, fontWeight: 500 },
+  successBox: { background: 'var(--green-dim)', color: '#1A8C3A', padding: '10px 14px', borderRadius: 'var(--radius-sm)', fontSize: 14, marginBottom: 4, fontWeight: 500 },
+  submitBtn:  { width: '100%', padding: '13px', background: 'var(--blue)', color: '#fff', border: 'none', borderRadius: 'var(--radius-sm)', fontSize: 16, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' },
+  linkBtn:    { background: 'none', border: 'none', color: 'var(--blue)', fontSize: 14, cursor: 'pointer', fontFamily: 'inherit', padding: '4px 0', textAlign: 'center', fontWeight: 500 },
 };

@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useApp } from '../context/AppContext';
 import ChatLayout from './ChatLayout';
 import SchoolsCabinet from './SchoolsCabinet';
@@ -19,129 +19,152 @@ const ROLE_LABELS = {
   developer: 'Разработчик',
 };
 
-function NavItem({ icon, label, view, badge, currentView, setView }) {
-  const active = currentView === view;
-  return (
-    <div
-      onClick={() => setView(view)}
-      style={{
-        display: 'flex', alignItems: 'center', gap: 10, padding: '9px 16px',
-        cursor: 'pointer', fontSize: 13,
-        color: active ? '#E8A83E' : 'rgba(255,255,255,0.55)',
-        background: active ? 'rgba(201,146,42,0.1)' : 'transparent',
-        borderLeft: active ? '2px solid #C9922A' : '2px solid transparent',
-        transition: 'all 0.12s',
-      }}
-      onMouseEnter={e => { if (!active) { e.currentTarget.style.background = 'rgba(255,255,255,0.04)'; e.currentTarget.style.color = 'rgba(255,255,255,0.85)'; }}}
-      onMouseLeave={e => { if (!active) { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'rgba(255,255,255,0.55)'; }}}
-    >
-      <span style={{ fontSize: 16, width: 20, textAlign: 'center', flexShrink: 0 }}>{icon}</span>
-      <span style={{ flex: 1 }}>{label}</span>
-      {badge > 0 && (
-        <span style={{ background: '#EF4444', color: '#fff', fontSize: 10, fontWeight: 700, padding: '1px 5px', borderRadius: 10, minWidth: 18, textAlign: 'center' }}>
-          {badge}
-        </span>
-      )}
-    </div>
-  );
-}
+// ── Навигационные группы для десктопного сайдбара ────────
+function getNavGroups(role) {
+  const groups = [];
 
-function SectionLabel({ children }) {
-  return (
-    <div style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1px', color: 'rgba(255,255,255,0.22)', padding: '10px 16px 4px' }}>
-      {children}
-    </div>
-  );
-}
-
-function getNavItems(role) {
-  const items = [];
-
-  // Чат — для всех
-  items.push({ section: 'Главное', items: [
+  groups.push({ section: 'Главное', items: [
     { icon: '💬', label: 'Сообщения', view: 'chat' },
   ]});
 
-  // Кабинет школы
-  if (['student', 'teacher', 'admin'].includes(role)) {
-    items.push({ section: 'Обучение', items: [
+  if (['student','teacher','admin'].includes(role)) {
+    groups.push({ section: 'Обучение', items: [
       { icon: '🎓', label: role === 'teacher' ? 'Моя школа' : 'Кабинет ученика', view: 'schools' },
     ]});
   }
 
-  // Наставничество
-  if (['mentor', 'mentee', 'admin'].includes(role)) {
-    const learningSection = items.find(s => s.section === 'Обучение');
+  if (['mentor','mentee','admin'].includes(role)) {
+    const sec = groups.find(g => g.section === 'Обучение');
     const item = {
       icon: '🌱',
-      label: role === 'mentor' ? 'Мои наставляемые' : role === 'mentee' ? 'Моё наставничество' : 'Наставничество',
+      label: role === 'mentor' ? 'Наставляемые' : role === 'mentee' ? 'Наставничество' : 'Наставничество',
       view: 'mentoring',
     };
-    if (learningSection) learningSection.items.push(item);
-    else items.push({ section: 'Наставничество', items: [item] });
+    if (sec) sec.items.push(item);
+    else groups.push({ section: 'Наставничество', items: [item] });
   }
 
-  // Инструменты администратора
   if (role === 'admin') {
-    items.push({ section: 'Управление', items: [
-      { icon: '📊', label: 'Дашборд',        view: 'dashboard' },
-      { icon: '👥', label: 'CRM / Участники', view: 'crm' },
+    groups.push({ section: 'Управление', items: [
+      { icon: '📊', label: 'Дашборд',   view: 'dashboard' },
+      { icon: '👥', label: 'Участники', view: 'crm' },
     ]});
   }
 
-  // Профиль — для всех
-  items.push({ section: 'Аккаунт', items: [
-    { icon: '👤', label: 'Мой профиль',        view: 'profile'   },
-    { icon: '🛠️', label: 'Панель разработчика', view: 'devpanel'  },
+  groups.push({ section: 'Аккаунт', items: [
+    { icon: '👤', label: 'Профиль',     view: 'profile'  },
+    { icon: '🛠️', label: 'Разработчик', view: 'devpanel' },
   ]});
 
-  return items;
+  return groups;
+}
+
+// ── Пункты нижней мобильной панели ───────────────────────
+function getMobileTabs(role) {
+  const tabs = [
+    { icon: '💬', label: 'Чат',     view: 'chat'    },
+  ];
+
+  if (['student','teacher','admin'].includes(role)) {
+    tabs.push({ icon: '🎓', label: 'Учёба', view: 'schools' });
+  }
+  if (['mentor','mentee'].includes(role)) {
+    tabs.push({ icon: '🌱', label: 'Наставник', view: 'mentoring' });
+  }
+  if (role === 'admin') {
+    tabs.push({ icon: '📊', label: 'Дашборд', view: 'dashboard' });
+    tabs.push({ icon: '👥', label: 'CRM',     view: 'crm'       });
+  }
+
+  // Профиль всегда последний
+  tabs.push({ icon: '👤', label: 'Профиль', view: 'profile' });
+
+  // Обрезаем до 5 максимум
+  return tabs.slice(0, 5);
 }
 
 const VIEW_TITLES = {
-  chat:      (role) => 'Сообщения',
-  schools:   (role) => role === 'teacher' ? 'Кабинет преподавателя' : 'Кабинет ученика',
-  mentoring: (role) => role === 'mentor' ? 'Кабинет наставника' : 'Наставничество',
-  crm:       () => 'CRM · Участники',
-  dashboard: () => 'Панель управления',
-  profile:   () => 'Мой профиль',
-  devpanel:  () => '🛠️ Панель разработчика',
+  chat:      r => 'Сообщения',
+  schools:   r => r === 'teacher' ? 'Моя школа' : 'Учёба',
+  mentoring: r => r === 'mentor' ? 'Наставляемые' : 'Наставничество',
+  crm:       () => 'Участники',
+  dashboard: () => 'Дашборд',
+  profile:   () => 'Профиль',
+  devpanel:  () => '🛠 Разработчик',
 };
+
+// ── Десктопный пункт навигации ────────────────────────────
+function NavItem({ icon, label, view, currentView, setView }) {
+  const active = currentView === view;
+  return (
+    <div
+      className={`channel-item${active ? ' active' : ''}`}
+      onClick={() => setView(view)}
+    >
+      <span style={{ fontSize: 16, width: 22, textAlign: 'center', flexShrink: 0 }}>{icon}</span>
+      <span style={{ flex: 1, letterSpacing: '-0.1px' }}>{label}</span>
+    </div>
+  );
+}
+
+// ── Лейбл секции ─────────────────────────────────────────
+function SectionLabel({ children }) {
+  return <div className="section-label">{children}</div>;
+}
 
 export default function AppShell() {
   const { currentUser, logout, activeView, setActiveView, notification } = useApp();
-  const role      = currentUser?.role;
-  const navGroups = getNavItems(role);
+  const role = currentUser?.role;
+  const navGroups = getNavGroups(role);
+  const mobileTabs = getMobileTabs(role);
 
-  // Начальный экран по роли
+  // Начальный экран
   useEffect(() => {
-    if (role === 'admin')     setActiveView('dashboard');
+    if (role === 'admin')          setActiveView('dashboard');
     else if (role === 'developer') setActiveView('devpanel');
-    else setActiveView('chat');
+    else                           setActiveView('chat');
   }, [role]); // eslint-disable-line
 
   const viewTitle = VIEW_TITLES[activeView]?.(role) || '';
 
   return (
-    <div style={{ display: 'flex', height: '100vh', overflow: 'hidden' }}>
+    <div style={{ display: 'flex', height: '100vh', overflow: 'hidden', background: 'var(--bg2)' }}>
 
-      {/* Сайдбар */}
-      <div style={{ width: 220, background: '#0F1117', display: 'flex', flexDirection: 'column', flexShrink: 0, borderRight: '1px solid rgba(255,255,255,0.06)' }}>
-
+      {/* ── Десктопный сайдбар (скрыт на мобильных) ────── */}
+      <div
+        className="desktop-sidebar"
+        style={{
+          width: 240,
+          background: 'var(--sidebar-bg)',
+          display: 'flex', flexDirection: 'column',
+          flexShrink: 0,
+          borderRight: '1px solid var(--sidebar-border)',
+        }}
+      >
         {/* Логотип */}
-        <div style={{ padding: '18px 16px 14px', borderBottom: '1px solid rgba(255,255,255,0.07)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            <div style={{ width: 36, height: 36, background: 'linear-gradient(135deg, #C9922A, #E8A83E)', borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, fontWeight: 700, color: '#fff', flexShrink: 0 }}>T</div>
-            <div>
-              <div style={{ fontSize: 15, fontWeight: 700, color: '#E8A83E', letterSpacing: 2 }}>ТЕРРА</div>
-              <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)', marginTop: 1 }}>Бизнес Клуб</div>
-            </div>
+        <div style={{
+          padding: '20px 18px 16px',
+          borderBottom: '1px solid var(--sidebar-border)',
+          display: 'flex', alignItems: 'center', gap: 12,
+        }}>
+          <div style={{
+            width: 38, height: 38,
+            background: 'linear-gradient(135deg, #007AFF, #32ADE6)',
+            borderRadius: 10,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontSize: 18, fontWeight: 800, color: '#fff',
+            boxShadow: '0 2px 8px rgba(0,122,255,0.35)',
+            flexShrink: 0,
+          }}>T</div>
+          <div>
+            <div style={{ fontSize: 15, fontWeight: 700, color: '#fff', letterSpacing: 1 }}>ТЕРРА</div>
+            <div style={{ fontSize: 11, color: 'rgba(235,235,245,0.45)', marginTop: 1 }}>Бизнес Клуб</div>
           </div>
         </div>
 
         {/* Бейдж роли */}
-        <div style={{ padding: '10px 16px', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-          <span className={`badge badge-${role}`} style={{ fontSize: 11 }}>
+        <div style={{ padding: '10px 18px', borderBottom: '1px solid var(--sidebar-border)' }}>
+          <span className={`badge badge-${role}`} style={{ fontSize: 12 }}>
             <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'currentColor', display: 'inline-block', marginRight: 4 }} />
             {ROLE_LABELS[role] || 'Гость'}
           </span>
@@ -159,44 +182,73 @@ export default function AppShell() {
           ))}
         </div>
 
-        {/* Футер пользователя */}
-        <div style={{ padding: '12px 16px', borderTop: '1px solid rgba(255,255,255,0.07)', display: 'flex', alignItems: 'center', gap: 10 }}>
-          <div className="avatar avatar-sm" style={{ background: currentUser?.color || '#888', flexShrink: 0 }}>
-            {currentUser?.initials || '?'}
-          </div>
+        {/* Пользователь */}
+        <div style={{
+          padding: '12px 18px',
+          borderTop: '1px solid var(--sidebar-border)',
+          display: 'flex', alignItems: 'center', gap: 10,
+        }}>
+          <div
+            className="avatar avatar-sm"
+            style={{ background: currentUser?.color || 'var(--blue)', flexShrink: 0 }}
+          >{currentUser?.initials || '?'}</div>
           <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.75)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            <div style={{ fontSize: 13, fontWeight: 500, color: 'rgba(255,255,255,0.85)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
               {currentUser?.name}
             </div>
-            <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            <div style={{ fontSize: 11, color: 'rgba(235,235,245,0.4)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
               {currentUser?.email}
             </div>
           </div>
           <button
             onClick={logout} title="Выйти"
-            style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.3)', cursor: 'pointer', fontSize: 16, padding: 4, transition: 'color 0.15s', flexShrink: 0 }}
-            onMouseEnter={e => e.currentTarget.style.color = '#EF4444'}
-            onMouseLeave={e => e.currentTarget.style.color = 'rgba(255,255,255,0.3)'}
+            style={{
+              background: 'none', border: 'none',
+              color: 'rgba(235,235,245,0.3)',
+              cursor: 'pointer', fontSize: 18, padding: 4,
+              transition: 'color 0.15s', flexShrink: 0,
+            }}
+            onMouseEnter={e => e.currentTarget.style.color = 'var(--red)'}
+            onMouseLeave={e => e.currentTarget.style.color = 'rgba(235,235,245,0.3)'}
           >⏻</button>
         </div>
       </div>
 
-      {/* Основной контент */}
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', background: '#fff' }}>
-
-        {/* Топбар (не показываем для чата — у него своя шапка) */}
+      {/* ── Основной контент ─────────────────────────────── */}
+      <div
+        style={{
+          flex: 1, display: 'flex', flexDirection: 'column',
+          overflow: 'hidden', background: 'var(--bg)',
+          minWidth: 0,
+        }}
+        className="main-content-area"
+      >
+        {/* Десктопный топбар (не для чата — у него своя шапка) */}
         {activeView !== 'chat' && (
-          <div style={{ padding: '12px 20px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0, background: '#fff' }}>
-            <div style={{ fontSize: 15, fontWeight: 600 }}>{viewTitle}</div>
+          <div
+            className="desktop-topbar"
+            style={{
+              padding: '13px 22px',
+              borderBottom: '0.5px solid var(--border)',
+              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+              flexShrink: 0, background: 'var(--bg)',
+            }}
+          >
+            <div style={{ fontSize: 17, fontWeight: 700, letterSpacing: '-0.3px' }}>{viewTitle}</div>
             <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
               <div
                 className="avatar avatar-sm"
-                style={{ background: currentUser?.color || '#888', cursor: 'pointer' }}
+                style={{ background: currentUser?.color || 'var(--blue)', cursor: 'pointer' }}
                 onClick={() => setActiveView('profile')}
-              >
-                {currentUser?.initials || '?'}
-              </div>
+              >{currentUser?.initials || '?'}</div>
             </div>
+          </div>
+        )}
+
+        {/* Мобильный заголовок */}
+        {activeView !== 'chat' && (
+          <div className="mobile-page-header">
+            <div className="mobile-page-title">{viewTitle}</div>
           </div>
         )}
 
@@ -212,9 +264,24 @@ export default function AppShell() {
         </div>
       </div>
 
+      {/* ── Мобильная нижняя панель ──────────────────────── */}
+      <div className="mobile-tab-bar">
+        {mobileTabs.map(tab => (
+          <div
+            key={tab.view}
+            className={`mobile-tab-bar-item${activeView === tab.view ? ' active' : ''}`}
+            onClick={() => setActiveView(tab.view)}
+            style={{ position: 'relative' }}
+          >
+            <span className="tab-icon">{tab.icon}</span>
+            <span>{tab.label}</span>
+          </div>
+        ))}
+      </div>
+
       {/* Уведомление */}
       {notification && (
-        <div className={`notification ${notification.type}`}>
+        <div className={`notification ${notification.type || ''}`}>
           {notification.msg}
         </div>
       )}
