@@ -1,0 +1,58 @@
+name: Сборка и деплой на Beget
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Шаг 1: Скачать код из GitHub
+      - name: Скачать код
+        uses: actions/checkout@v3
+
+      # Шаг 2: Установить Node.js
+      - name: Установить Node.js 18
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      # Шаг 3: Установить зависимости
+      - name: Установить зависимости (npm install)
+        run: npm install --legacy-peer-deps
+
+      # Шаг 4: Собрать приложение
+      - name: Собрать приложение (npm run build)
+        run: npm run build
+        env:
+          REACT_APP_SUPABASE_URL: ${{ secrets.REACT_APP_SUPABASE_URL }}
+          REACT_APP_SUPABASE_KEY: ${{ secrets.REACT_APP_SUPABASE_KEY }}
+          REACT_APP_CLOUDINARY_NAME: ${{ secrets.REACT_APP_CLOUDINARY_NAME }}
+          CI: false
+
+      # Шаг 5: Создать файл .htaccess для правильной работы React-роутинга
+      - name: Создать .htaccess
+        run: |
+          cat > build/.htaccess << 'HTACCESS'
+          Options -MultiViews
+          RewriteEngine On
+          RewriteCond %{REQUEST_FILENAME} !-f
+          RewriteRule ^ index.html [QSA,L]
+          HTACCESS
+
+      # Шаг 6: Загрузить папку build/ на Beget по FTP
+      - name: Загрузить на Beget (FTP)
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.4
+        with:
+          server: ${{ secrets.FTP_SERVER }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          local-dir: ./build/
+          server-dir: /public_html/
+          dangerous-clean-slate: false
+          exclude: |
+            **/.git*
+            **/.git*/**
