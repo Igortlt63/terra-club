@@ -2,6 +2,7 @@
   "name": "terra-club",
   "version": "1.0.0",
   "private": true,
+  "homepage": ".",
   "dependencies": {
     "@supabase/supabase-js": "^2.99.3",
     "cloudinary-react": "^1.8.1",
