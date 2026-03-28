@@ -1,4 +1,4 @@
-name: Сборка и деплой на Beget
+name: Deploy to Beget
 
 on:
   push:
@@ -9,39 +9,32 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Скачать код из GitHub
-        uses: actions/checkout@v3
+      - name: Checkout
+        uses: actions/checkout@v4
 
-      - name: Установить Node.js 18
-        uses: actions/setup-node@v3
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
           node-version: '18'
           cache: 'npm'
 
-      - name: Установить зависимости
+      - name: Install dependencies
         run: npm install --legacy-peer-deps
 
-      - name: Собрать приложение
+      - name: Build
         run: npm run build
         env:
           REACT_APP_SUPABASE_URL: ${{ secrets.REACT_APP_SUPABASE_URL }}
           REACT_APP_SUPABASE_KEY: ${{ secrets.REACT_APP_SUPABASE_KEY }}
           REACT_APP_CLOUDINARY_NAME: ${{ secrets.REACT_APP_CLOUDINARY_NAME }}
           CI: false
+          GENERATE_SOURCEMAP: false
 
-      - name: Создать .htaccess для React-роутинга
+      - name: Create .htaccess
         run: |
-          cat > build/.htaccess << 'HTACCESS'
-          Options -MultiViews
-          RewriteEngine On
-          RewriteCond %{REQUEST_FILENAME} !-f
-          RewriteRule ^ index.html [QSA,L]
-          HTACCESS
+          printf 'Options -MultiViews\nRewriteEngine On\nRewriteCond %%{REQUEST_FILENAME} !-f\nRewriteRule ^ index.html [QSA,L]\n' > build/.htaccess
 
-      # ВАЖНО: server-dir должен быть "/" (корень FTP)
-      # Beget FTP логинится сразу в папку public_html
-      # Поэтому "/" = public_html на сервере
-      - name: Загрузить на Beget через FTP
+      - name: Deploy via FTP
         uses: SamKirkland/FTP-Deploy-Action@v4.3.4
         with:
           server: ${{ secrets.FTP_SERVER }}
