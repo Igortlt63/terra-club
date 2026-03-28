@@ -1,0 +1,32 @@
+[
+  {
+    "id": "4657117b-86ec-4ba6-8e1f-51b8a8eec17c",
+    "name": "Игорь Свечников",
+    "initials": "ИС",
+    "role": "admin",
+    "city_id": "moscow",
+    "school_id": null,
+    "mentor_id": null,
+    "stream_number": null,
+    "current_module": 1,
+    "color": "#C9922A",
+    "bio": null,
+    "created_at": "2026-03-20 16:42:21.213009+00",
+    "email": "igorsvech63@gmail.com"
+  },
+  {
+    "id": "5be42540-b78e-487d-a3df-dd3371a8c60d",
+    "name": "Свеч Игорев",
+    "initials": "СИ",
+    "role": "teacher",
+    "city_id": "moscow",
+    "school_id": "oratory",
+    "mentor_id": null,
+    "stream_number": 10,
+    "current_module": 1,
+    "color": "#F97316",
+    "bio": null,
+    "created_at": "2026-03-22 03:04:51.59609+00",
+    "email": "lemeilleur-igor@yandex.ru"
+  }
+]

@@ -54,7 +54,7 @@ function EditModal({ user, onClose, onSaved }) {
       display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000,
     }} onClick={onClose}>
       <div style={{
-        background: '#fff', borderRadius: 14, padding: 24, width: 400,
+        background: 'var(--bg-raised)', borderRadius: 'var(--r-lg)', padding: 24, width: 400,
         boxShadow: '0 8px 32px rgba(0,0,0,0.18)',
       }} onClick={e => e.stopPropagation()}>
         <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 20 }}>
@@ -172,15 +172,15 @@ export default function CRMPage() {
           <input
             type="text" value={search} onChange={e => setSearch(e.target.value)}
             placeholder="🔍  Поиск по имени или email..."
-            style={{ width: 240, padding: '7px 12px', border: '1px solid var(--border2)', borderRadius: 8, fontSize: 13, outline: 'none', fontFamily: 'inherit' }}
+            style={{ width: 240, padding: '7px 12px', border: '1px solid var(--border2)'', borderRadius: 8, fontSize: 13, outline: 'none', fontFamily: 'inherit' }}
           />
           <select value={filterRole} onChange={e => setFilterRole(e.target.value)}
-            style={{ padding: '7px 12px', border: '1px solid var(--border2)', borderRadius: 8, fontSize: 13, background: '#fff' }}>
+            style={{ padding: '7px 12px', border: '1px solid var(--border2)'', borderRadius: 8, fontSize: 13, background: 'var(--bg-raised)' }}>
             <option value="all">Все роли</option>
             {Object.entries(ROLE_LABELS).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
           </select>
           <select value={filterCity} onChange={e => setFilterCity(e.target.value)}
-            style={{ padding: '7px 12px', border: '1px solid var(--border2)', borderRadius: 8, fontSize: 13, background: '#fff' }}>
+            style={{ padding: '7px 12px', border: '1px solid var(--border2)'', borderRadius: 8, fontSize: 13, background: 'var(--bg-raised)' }}>
             <option value="all">Все города</option>
             {CITIES.map(c => <option key={c.id} value={c.id}>{c.flag} {c.name}</option>)}
           </select>
@@ -188,8 +188,8 @@ export default function CRMPage() {
             {loading ? 'Загрузка...' : `${filtered.length} участников`}
           </span>
           <button onClick={loadMembers} style={{
-            marginLeft: 'auto', padding: '7px 14px', border: '1px solid var(--border2)',
-            borderRadius: 8, fontSize: 12, background: '#fff', cursor: 'pointer',
+            marginLeft: 'auto', padding: '7px 14px', border: '1px solid var(--border2)'',
+            borderRadius: 8, fontSize: 12, background: 'var(--bg-raised)', cursor: 'pointer',
           }}>🔄 Обновить</button>
         </div>
 
@@ -275,7 +275,7 @@ export default function CRMPage() {
       {selected && (
         <div style={{
           width: 300, borderLeft: '1px solid var(--border)',
-          overflowY: 'auto', flexShrink: 0, background: '#fff',
+          overflowY: 'auto', flexShrink: 0, background: 'var(--bg-raised)',
         }}>
           <div style={{
             padding: '14px 16px', borderBottom: '1px solid var(--border)',
@@ -353,7 +353,7 @@ export default function CRMPage() {
 const S = {
   field:     { marginBottom: 14 },
   label:     { display: 'block', fontSize: 11, fontWeight: 600, color: '#6B7280', textTransform: 'uppercase', letterSpacing: '0.4px', marginBottom: 6 },
-  select:    { width: '100%', padding: '8px 10px', border: '1px solid #D1D5DB', borderRadius: 8, fontSize: 13, outline: 'none', background: '#fff' },
-  btnCancel: { padding: '8px 16px', borderRadius: 8, border: '1px solid #D1D5DB', background: '#fff', fontSize: 13, cursor: 'pointer', fontFamily: 'inherit' },
+  select:    { width: '100%', padding: '8px 10px', border: '1px solid var(--border2)'', borderRadius: 8, fontSize: 13, outline: 'none', background: 'var(--bg-raised)' },
+  btnCancel: { padding: '8px 16px', borderRadius: 8, border: '1px solid var(--border2)'', background: 'var(--bg-raised)', fontSize: 13, cursor: 'pointer', fontFamily: 'inherit' },
   btnSave:   { padding: '8px 20px', borderRadius: 8, border: 'none', background: '#C9922A', color: '#fff', fontSize: 13, cursor: 'pointer', fontFamily: 'inherit', fontWeight: 500 },
 };

@@ -63,7 +63,7 @@ function SubmitModal({ task, onClose, onSubmitted }) {
             value={answer} onChange={e => setAnswer(e.target.value)}
             placeholder="Опишите что вы сделали, какие результаты получили..."
             rows={5}
-            style={{ width: '100%', padding: '10px 12px', border: '1px solid var(--border2)', borderRadius: 8, fontSize: 13, fontFamily: 'inherit', resize: 'vertical', outline: 'none', boxSizing: 'border-box' }}
+            style={{ width: '100%', padding: '10px 12px', border: '1px solid var(--border2)'', borderRadius: 8, fontSize: 13, fontFamily: 'inherit', resize: 'vertical', outline: 'none', boxSizing: 'border-box' }}
           />
           {error && <div style={MS.error}>{error}</div>}
         </div>
@@ -137,7 +137,7 @@ function GradeModal({ task, studentName, onClose, onGraded }) {
               value={feedback} onChange={e => setFeedback(e.target.value)}
               placeholder="Комментарий для ученика..."
               rows={3}
-              style={{ width: '100%', padding: '9px 12px', border: '1px solid var(--border2)', borderRadius: 8, fontSize: 13, fontFamily: 'inherit', resize: 'none', outline: 'none', boxSizing: 'border-box' }}
+              style={{ width: '100%', padding: '9px 12px', border: '1px solid var(--border2)'', borderRadius: 8, fontSize: 13, fontFamily: 'inherit', resize: 'none', outline: 'none', boxSizing: 'border-box' }}
             />
           </div>
           {error && <div style={MS.error}>{error}</div>}
@@ -223,7 +223,7 @@ function CreateTaskModal({ schoolId, modules, onClose, onCreated }) {
             <div style={MS.field}>
               <label style={MS.label}>Модуль</label>
               <select value={moduleId} onChange={e => setModuleId(e.target.value)}
-                style={{ ...MS.inputStyle, background: '#fff' }}>
+                style={{ ...MS.inputStyle, background: 'var(--bg-raised)' }}>
                 <option value="">— не выбран —</option>
                 {modules.map(m => (
                   <option key={m.id} value={m.id}>Модуль {m.number}: {m.title}</option>
@@ -461,7 +461,7 @@ export default function SchoolsCabinet() {
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
 
       {/* Шапка */}
-      <div style={{ padding: '20px 24px 0', borderBottom: '1px solid var(--border)', background: '#fff', flexShrink: 0 }}>
+      <div style={{ padding: '20px 24px 0', borderBottom: '1px solid var(--border)', background: 'var(--bg-raised)', flexShrink: 0 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 16 }}>
           <div style={{ width: 52, height: 52, borderRadius: 14, background: `${school.color}18`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 26, flexShrink: 0 }}>
             {school.icon}
@@ -826,7 +826,7 @@ const BS = {
 };
 const MS = {
   overlay:    { position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 },
-  modal:      { background: '#fff', borderRadius: 14, width: 480, maxWidth: '92vw', boxShadow: '0 8px 40px rgba(0,0,0,0.18)', display: 'flex', flexDirection: 'column', maxHeight: '90vh' },
+  modal:      { background: 'var(--bg-surface)', borderRadius: 14, width: 480, maxWidth: '92vw', boxShadow: '0 8px 40px rgba(0,0,0,0.18)', display: 'flex', flexDirection: 'column', maxHeight: '90vh' },
   header:     { padding: '18px 20px 14px', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' },
   title:      { fontSize: 15, fontWeight: 600 },
   close:      { background: 'none', border: 'none', fontSize: 22, cursor: 'pointer', color: 'var(--text3)', lineHeight: 1, padding: 0 },
@@ -834,8 +834,8 @@ const MS = {
   footer:     { padding: '14px 20px', borderTop: '1px solid var(--border)', display: 'flex', justifyContent: 'flex-end', gap: 10 },
   field:      { marginBottom: 14 },
   label:      { display: 'block', fontSize: 11, fontWeight: 600, color: '#6B7280', textTransform: 'uppercase', letterSpacing: '0.4px', marginBottom: 6 },
-  inputStyle: { width: '100%', padding: '9px 12px', border: '1px solid #D1D5DB', borderRadius: 8, fontSize: 13, outline: 'none', fontFamily: 'inherit', boxSizing: 'border-box' },
+  inputStyle: { width: '100%', padding: '9px 12px', border: '1px solid var(--border2)'', borderRadius: 8, fontSize: 13, outline: 'none', fontFamily: 'inherit', boxSizing: 'border-box' },
   error:      { color: '#DC2626', fontSize: 13, marginTop: 8, padding: '8px 12px', background: '#FEF2F2', borderRadius: 6 },
-  btnCancel:  { padding: '8px 16px', borderRadius: 8, border: '1px solid #D1D5DB', background: '#fff', fontSize: 13, cursor: 'pointer', fontFamily: 'inherit' },
+  btnCancel:  { padding: '8px 16px', borderRadius: 8, border: '1px solid var(--border2)'', background: 'var(--bg-raised)', fontSize: 13, cursor: 'pointer', fontFamily: 'inherit' },
   btnPrimary: { padding: '8px 20px', borderRadius: 8, border: 'none', background: '#C9922A', color: '#fff', fontSize: 13, cursor: 'pointer', fontFamily: 'inherit', fontWeight: 500 },
 };

@@ -9,23 +9,19 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # Шаг 1: Скачать код из GitHub
-      - name: Скачать код
+      - name: Скачать код из GitHub
         uses: actions/checkout@v3
 
-      # Шаг 2: Установить Node.js
       - name: Установить Node.js 18
         uses: actions/setup-node@v3
         with:
           node-version: '18'
           cache: 'npm'
 
-      # Шаг 3: Установить зависимости
-      - name: Установить зависимости (npm install)
+      - name: Установить зависимости
         run: npm install --legacy-peer-deps
 
-      # Шаг 4: Собрать приложение
-      - name: Собрать приложение (npm run build)
+      - name: Собрать приложение
         run: npm run build
         env:
           REACT_APP_SUPABASE_URL: ${{ secrets.REACT_APP_SUPABASE_URL }}
@@ -33,8 +29,7 @@ jobs:
           REACT_APP_CLOUDINARY_NAME: ${{ secrets.REACT_APP_CLOUDINARY_NAME }}
           CI: false
 
-      # Шаг 5: Создать файл .htaccess для правильной работы React-роутинга
-      - name: Создать .htaccess
+      - name: Создать .htaccess для React-роутинга
         run: |
           cat > build/.htaccess << 'HTACCESS'
           Options -MultiViews
@@ -43,16 +38,19 @@ jobs:
           RewriteRule ^ index.html [QSA,L]
           HTACCESS
 
-      # Шаг 6: Загрузить папку build/ на Beget по FTP
-      - name: Загрузить на Beget (FTP)
+      # ВАЖНО: server-dir должен быть "/" (корень FTP)
+      # Beget FTP логинится сразу в папку public_html
+      # Поэтому "/" = public_html на сервере
+      - name: Загрузить на Beget через FTP
         uses: SamKirkland/FTP-Deploy-Action@v4.3.4
         with:
           server: ${{ secrets.FTP_SERVER }}
           username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
           local-dir: ./build/
-          server-dir: /public_html/
+          server-dir: /
           dangerous-clean-slate: false
           exclude: |
             **/.git*
             **/.git*/**
+            **/node_modules/**
