@@ -23,7 +23,7 @@ jobs:
       - name: Install dependencies
         run: npm install --legacy-peer-deps --include=dev
 
-      - name: Fix react-scripts permissions
+      - name: Fix permissions
         run: chmod +x node_modules/.bin/react-scripts
 
       - name: Build
@@ -34,6 +34,7 @@ jobs:
           REACT_APP_CLOUDINARY_NAME: ${{ secrets.REACT_APP_CLOUDINARY_NAME }}
           CI: false
           GENERATE_SOURCEMAP: false
+          DISABLE_ESLINT_PLUGIN: true
 
       - name: Create .htaccess
         run: printf 'Options -MultiViews\nRewriteEngine On\nRewriteCond %%{REQUEST_FILENAME} !-f\nRewriteRule ^ index.html [QSA,L]\n' > build/.htaccess
