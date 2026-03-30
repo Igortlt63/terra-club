@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
 import { supabase } from '../supabase';
+import Logo from '../components/Logo';
 
 export default function LoginPage() {
   const { login } = useApp();
@@ -53,16 +54,10 @@ export default function LoginPage() {
     }}>
 
       {/* Лого */}
-      <div style={{ textAlign:'center', marginBottom:36 }}>
-        <div style={{
-          width:80, height:80, margin:'0 auto 20px',
-          background:'linear-gradient(135deg, #3B82F6, #1D4ED8)',
-          borderRadius:24, display:'flex', alignItems:'center', justifyContent:'center',
-          fontSize:36, fontWeight:900, color:'#fff',
-          boxShadow:'0 0 40px rgba(59,130,246,0.4), 0 8px 24px rgba(0,0,0,0.3)',
-        }}>T</div>
-        <div style={{ fontSize:32, fontWeight:900, color:'var(--text)', letterSpacing:-1 }}>Терра Клуб</div>
-        <div style={{ fontSize:15, color:'var(--text3)', marginTop:6 }}>Бизнес сообщество</div>
+      <div style={{ textAlign:'center', marginBottom:36, display:'flex', flexDirection:'column', alignItems:'center' }}>
+        <Logo size={80} showText={false} />
+        <div style={{ fontSize:28, fontWeight:900, color:'var(--text)', letterSpacing:-0.5, marginTop:12 }}>Терра Клуб</div>
+        <div style={{ fontSize:14, color:'var(--text3)', marginTop:5, letterSpacing:0.5 }}>Бизнес сообщество</div>
       </div>
 
       {/* Карточка */}

@@ -8,6 +8,7 @@ import AdminDashboard from './AdminDashboard';
 import ProfilePage from './ProfilePage';
 import DevPanel from './DevPanel';
 import GovernancePage from './GovernancePage';
+import Logo from '../components/Logo';
 
 const ROLE_LABELS = {
   admin:'Руководство', teacher:'Преподаватель', student:'Ученик',
@@ -124,14 +125,12 @@ export default function AppShell() {
         display:'flex', flexDirection:'column',
       }}>
         {/* Лого */}
-        <div style={{ padding:'22px 20px 18px', borderBottom:'1px solid var(--border)' }}>
+        <div style={{ padding:'18px 20px 14px', borderBottom:'1px solid var(--border)' }}>
           <div style={{ display:'flex', alignItems:'center', gap:12 }}>
-            <div style={{ width:40, height:40, flexShrink:0, background:'linear-gradient(135deg,#3B82F6,#1D4ED8)', borderRadius:12, display:'flex', alignItems:'center', justifyContent:'center', boxShadow:'0 0 20px rgba(59,130,246,0.4)' }}>
-              <span style={{ fontSize:18, fontWeight:900, color:'#fff' }}>T</span>
-            </div>
+            <Logo size={38} showText={false} />
             <div>
-              <div style={{ fontSize:16, fontWeight:800, color:'var(--text)', letterSpacing:-0.5 }}>Терра</div>
-              <div style={{ fontSize:11, color:'var(--text4)', marginTop:1 }}>Бизнес Клуб</div>
+              <div style={{ fontSize:15, fontWeight:800, color:'var(--text)', letterSpacing:-0.3 }}>Терра</div>
+              <div style={{ fontSize:10, color:'var(--text4)', marginTop:1, letterSpacing:0.3 }}>Бизнес Клуб</div>
             </div>
           </div>
         </div>
