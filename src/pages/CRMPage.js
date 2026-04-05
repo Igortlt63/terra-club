@@ -1,3 +1,4 @@
+import { useApp } from '../context/AppContext';
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabase';
 import { CITIES, SCHOOLS } from '../data/db';
@@ -125,7 +126,7 @@ function EditModal({ user, onClose, onSaved }) {
 }
 
 // ── Главный компонент ───────────────────────────────────────
-export default function CRMPage() {
+export default function CRMPage({ onOpenDm }) {
   const [members,    setMembers]    = useState([]);
   const [loading,    setLoading]    = useState(true);
   const [search,     setSearch]     = useState('');
@@ -322,8 +323,18 @@ export default function CRMPage() {
               </div>
             ) : null)}
 
+            {/* Написать сообщение — FIX 5 */}
+            <div style={{ marginTop: 16, marginBottom: 8 }}>
+              <button
+                onClick={() => { onOpenDm?.(selected); }}
+                style={{ width: '100%', padding: '10px', borderRadius: 10, background: 'var(--accent-dim)', border: '1px solid var(--border)', color: 'var(--accent-bright)', cursor: 'pointer', fontFamily: 'inherit', fontSize: 14, fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+                Написать сообщение
+              </button>
+            </div>
+
             {/* Кнопки */}
-            <div style={{ marginTop: 16, display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <div style={{ marginTop: 8, display: 'flex', flexDirection: 'column', gap: 8 }}>
               <button
                 onClick={() => setEditUser(selected)}
                 style={{

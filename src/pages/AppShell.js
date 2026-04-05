@@ -102,6 +102,7 @@ function NavItem({ icon, label, view, currentView, setView }) {
 
 export default function AppShell() {
   const { currentUser, logout, activeView, setActiveView, notification } = useApp();
+  const [openDmWithUser, setOpenDmWithUser] = React.useState(null);
   const role = currentUser?.role;
   const navGroups  = getNavGroups(role);
   const mobileTabs = getMobileTabs(role);
@@ -191,11 +192,11 @@ export default function AppShell() {
         )}
 
         <div style={{ flex:1, overflow:'hidden', display:'flex', flexDirection:'column' }} className="main-scroll-area">
-          {activeView==='chat'       && <ChatLayout />}
+          {activeView==='chat'       && <ChatLayout openDmWithUser={openDmWithUser} onDmOpened={()=>setOpenDmWithUser(null)} />}
           {activeView==='schools'    && <SchoolsCabinet />}
           {activeView==='mentoring'  && <MentoringCabinet />}
           {activeView==='governance' && <GovernancePage />}
-          {activeView==='crm'        && <CRMPage />}
+          {activeView==='crm'        && <CRMPage onOpenDm={u=>{ setOpenDmWithUser(u); setActiveView('chat'); }} />}
           {activeView==='dashboard'  && <AdminDashboard />}
           {activeView==='profile'    && <ProfilePage />}
           {activeView==='devpanel'   && <DevPanel />}
