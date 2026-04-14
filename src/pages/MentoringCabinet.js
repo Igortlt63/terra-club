@@ -140,10 +140,10 @@ function MentorView() {
   useEffect(() => { if (selected) { loadTasks(selected.id); setActiveTab('profile'); } }, [selected, loadTasks]);
 
   const statusInfo = {
-    done:      { icon: '✅', label: 'Проверено',             color: '#16A34A' },
+    done:      { icon: '✅', label: 'Проверено',             color: 'var(--green)' },
     submitted: { icon: '🟡', label: 'Сдано, ждёт проверки', color: '#D97706' },
     pending:   { icon: '📝', label: 'Не сдано',              color: '#C9922A' },
-    overdue:   { icon: '🔴', label: 'Просрочено',            color: '#DC2626' },
+    overdue:   { icon: '🔴', label: 'Просрочено',            color: 'var(--red)' },
   };
 
   const handleGrade = async (taskId, grade) => {
@@ -305,7 +305,7 @@ function MentorView() {
                               ))}
                             </div>
                           )}
-                          {task.grade && <div style={{ fontSize: 12, color: '#16A34A', marginTop: 4, fontWeight: 600 }}>Оценка: {task.grade}/5 ⭐</div>}
+                          {task.grade && <div style={{ fontSize: 12, color: 'var(--green)', marginTop: 4, fontWeight: 600 }}>Оценка: {task.grade}/5 ⭐</div>}
                         </div>
                       </div>
                     </div>
@@ -465,9 +465,9 @@ function MenteeView() {
                 <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
                   <span>{task.status === 'done' ? '✅' : '🟡'}</span>
                   <span style={{ flex: 1 }}>{task.title}</span>
-                  {task.grade && <span style={{ color: '#16A34A', fontWeight: 600 }}>{task.grade}/5⭐</span>}
+                  {task.grade && <span style={{ color: 'var(--green)', fontWeight: 600 }}>{task.grade}/5⭐</span>}
                 </div>
-                {task.feedback && <div style={{ fontSize: 12, color: '#16A34A', marginTop: 3, marginLeft: 22 }}>💬 {task.feedback}</div>}
+                {task.feedback && <div style={{ fontSize: 12, color: 'var(--green)', marginTop: 3, marginLeft: 22 }}>💬 {task.feedback}</div>}
               </div>
             ))}
           </div>
@@ -563,9 +563,9 @@ const MS = {
   body:       { padding: '18px 20px', overflowY: 'auto', flex: 1 },
   footer:     { padding: '14px 20px', borderTop: '1px solid var(--border)', display: 'flex', justifyContent: 'flex-end', gap: 10 },
   field:      { marginBottom: 14 },
-  label:      { display: 'block', fontSize: 11, fontWeight: 600, color: '#6B7280', textTransform: 'uppercase', letterSpacing: '0.4px', marginBottom: 6 },
+  label:      { display: 'block', fontSize: 11, fontWeight: 600, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '0.4px', marginBottom: 6 },
   input:      { width: '100%', padding: '9px 12px', border: '1px solid var(--border2)', borderRadius: 8, fontSize: 13, outline: 'none', fontFamily: 'inherit', boxSizing: 'border-box' },
-  error:      { color: '#DC2626', fontSize: 13, marginTop: 8, padding: '8px 12px', background: '#FEF2F2', borderRadius: 6 },
+  error:      { color: 'var(--red)', fontSize: 13, marginTop: 8, padding: '8px 12px', background: 'var(--red-dim)', borderRadius: 6 },
   btnCancel:  { padding: '8px 16px', borderRadius: 8, border: '1px solid var(--border2)', background: 'var(--bg-raised)', fontSize: 13, cursor: 'pointer', fontFamily: 'inherit' },
   btnPrimary: { padding: '8px 20px', borderRadius: 8, border: 'none', background: '#C9922A', color: '#fff', fontSize: 13, cursor: 'pointer', fontFamily: 'inherit', fontWeight: 500 },
 };

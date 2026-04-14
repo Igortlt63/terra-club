@@ -152,7 +152,7 @@ export default function DevPanel() {
                 display: 'flex', alignItems: 'center', gap: 12,
                 padding: '14px 16px', borderRadius: 10, cursor: isActive ? 'default' : 'pointer',
                 border: isActive ? '2px solid #C9922A' : '1px solid var(--border2)',
-                background: isActive ? 'rgba(201,146,42,0.08)' : isSaved ? '#F0FDF4' : '#fff',
+                background: isActive ? 'var(--accent-dim)' : isSaved ? 'var(--green-dim)' : 'var(--bg-overlay)',
                 textAlign: 'left', fontFamily: 'inherit', transition: 'all 0.15s',
                 opacity: saving && !isActive ? 0.6 : 1,
               }}
@@ -213,7 +213,7 @@ export default function DevPanel() {
 }
 
 const LS = {
-  label:  { display: 'block', fontSize: 11, fontWeight: 600, color: '#6B7280', textTransform: 'uppercase', letterSpacing: '0.4px', marginBottom: 6 },
-  select: { width: '100%', padding: '8px 10px', border: '1px solid #D1D5DB', borderRadius: 8, fontSize: 13, outline: 'none', background: '#fff', fontFamily: 'inherit' },
-  input:  { width: '100%', padding: '8px 10px', border: '1px solid #D1D5DB', borderRadius: 8, fontSize: 13, outline: 'none', fontFamily: 'inherit', boxSizing: 'border-box' },
+  label:  { display: 'block', fontSize: 11, fontWeight: 600, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '0.4px', marginBottom: 6 },
+  select: { width: '100%', padding: '8px 10px', border: '1px solid var(--border2)', borderRadius: 8, fontSize: 13, outline: 'none', background: 'var(--bg-overlay)', color: 'var(--text)', fontFamily: 'inherit' },
+  input:  { width: '100%', padding: '8px 10px', border: '1px solid var(--border2)', borderRadius: 8, fontSize: 13, outline: 'none', fontFamily: 'inherit', color: 'var(--text)', background: 'var(--bg-overlay)', boxSizing: 'border-box' },
 };

@@ -66,9 +66,21 @@ function getPermissions(role) {
   ];
 }
 
-export default function ProfilePage() {
-  const { currentUser, logout, fetchProfile, setCurrentUser } = useApp();
-  const role = currentUser?.role;
+export default function ProfilePage({ viewUserId, onClear }) {
+  const { currentUser, logout, fetchProfile, setCurrentUser, getProfile } = useApp();
+  const [viewedProfile, setViewedProfile] = React.useState(null);
+
+  // Load other user profile if viewUserId passed
+  React.useEffect(()=>{
+    if (!viewUserId || viewUserId === currentUser?.id) { setViewedProfile(null); return; }
+    const cached = getProfile(viewUserId);
+    if (cached) { setViewedProfile(cached); return; }
+    fetchProfile(viewUserId).then(p => setViewedProfile(p||null));
+  },[viewUserId, currentUser?.id, getProfile, fetchProfile]); // eslint-disable-line
+
+  const displayUser = viewedProfile || currentUser;
+  const isOwnProfile = !viewedProfile || viewedProfile?.id === currentUser?.id;
+  const role = currentUser?.role; const displayRole = displayUser?.role;
 
   const [activeTab, setActiveTab] = useState('profile');
   const [name,      setName]      = useState(currentUser?.name || '');
