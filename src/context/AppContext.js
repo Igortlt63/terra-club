@@ -240,6 +240,25 @@ export function AppProvider({ children }) {
     setTimeout(() => setNotification(null), 3000);
   }, []);
 
+  // Локально обновить сообщение (optimistic update для реакций)
+  const updateLocalMessage = (channelKey, msgId, updater) => {
+    setMessages(prev => {
+      const msgs = prev[channelKey] || [];
+      return { ...prev, [channelKey]: msgs.map(m => m.id === msgId ? updater(m) : m) };
+    });
+  };
+
+  // Локально обновить DM сообщение
+  const updateLocalDmMessage = (dmUserId, msgId, updater) => {
+    const dmKey = 'dm_' + dmUserId;
+    setDmMessages(prev => {
+      const msgs = prev[dmKey] || [];
+      return { ...prev, [dmKey]: msgs.map(m => m.id === msgId ? updater(m) : m) };
+    });
+  };
+
+
+
   return (
     <AppContext.Provider value={{
       currentUser, setCurrentUser, loading,
