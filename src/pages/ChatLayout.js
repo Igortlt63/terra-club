@@ -409,7 +409,7 @@ function ChannelItem({ icon, name, active, unread, onClick, compact, onClose: on
 
 // ── Главный компонент ───────────────────────────────────────
 export default function ChatLayout({ openDmWithUser, onDmOpened, onOpenProfile }) {
-  const { currentUser, messages, dmMessages, unreadChannels, unreadDm, markChannelRead, setUnreadDm, loadDmMessages, getProfile, fetchProfile } = useApp();
+  const { currentUser, messages, dmMessages, unreadChannels, unreadDm, markChannelRead, setUnreadDm, loadDmMessages, getProfile, fetchProfile, updateLocalMessage, updateLocalDmMessage } = useApp();
   const role   = currentUser?.role;
   const cityId = currentUser?.city_id || 'moscow';
   const city   = CITIES.find(c=>c.id===cityId);
@@ -577,11 +577,34 @@ export default function ChatLayout({ openDmWithUser, onDmOpened, onOpenProfile }
 
   const handlePin    = async msg=>{ const v=!msg.is_pinned; await supabase.from('messages').update({is_pinned:v}).eq('id',msg.id); setPinnedMsg(v?msg:null); };
   const handleDelete = async msg=>{ if(!window.confirm('Удалить?'))return; await supabase.from(selected?.isDM?'direct_messages':'messages').update({deleted_at:new Date().toISOString()}).eq('id',msg.id); };
-  const handleReact  = async(msg,emoji)=>{
-    const t=selected?.isDM?'direct_messages':'messages';
-    const {data}=await supabase.from(t).select('reactions').eq('id',msg.id).single();
-    const r=data?.reactions||{}; const u=r[emoji]||[];
-    await supabase.from(t).update({reactions:{...r,[emoji]:u.includes(currentUser.id)?u.filter(x=>x!==currentUser.id):[...u,currentUser.id]}}).eq('id',msg.id);
+  const handleReact = async (msg, emoji) => {
+    const isDMMsg = selected?.isDM;
+    const table   = isDMMsg ? 'direct_messages' : 'messages';
+
+    // Optimistic update — сразу обновляем локальный стейт
+    const optimisticUpdater = (m) => {
+      const reactions = { ...(m.reactions || {}) };
+      const users     = reactions[emoji] || [];
+      const myId      = currentUser.id;
+      reactions[emoji] = users.includes(myId)
+        ? users.filter(x => x !== myId)
+        : [...users, myId];
+      return { ...m, reactions };
+    };
+
+    if (isDMMsg) {
+      updateLocalDmMessage?.(selected.dmUserId, msg.id, optimisticUpdater);
+    } else {
+      updateLocalMessage?.(selected.key, msg.id, optimisticUpdater);
+    }
+
+    // Затем обновляем в Supabase
+    const { data } = await supabase.from(table).select('reactions').eq('id', msg.id).single();
+    const r = data?.reactions || {};
+    const u = r[emoji] || [];
+    const myId = currentUser.id;
+    const newReactions = { ...r, [emoji]: u.includes(myId) ? u.filter(x => x !== myId) : [...u, myId] };
+    await supabase.from(table).update({ reactions: newReactions }).eq('id', msg.id);
   };
   const handleDelDynCh=async ch=>{ if(!window.confirm(`Удалить «${ch.name}»?`))return; await supabase.from('channels').delete().eq('id',ch.dynId); loadDynChannels(); if(selected?.key===ch.key) setSelected(allChannels[0]||null); };
 

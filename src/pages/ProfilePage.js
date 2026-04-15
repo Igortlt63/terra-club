@@ -15,24 +15,19 @@ const ROLE_BADGE = {
   member:'badge-member', developer:'badge-developer',
 };
 
-// ── iOS-стиль Toggle ────────────────────────────────────────
 function Toggle({ on, onChange, disabled }) {
   return (
-    <div
-      onClick={disabled ? undefined : onChange}
-      style={{
-        width:50, height:30, borderRadius:15, flexShrink:0,
-        background: on ? 'var(--accent)' : 'rgba(255,255,255,0.12)',
-        border: on ? 'none' : '1px solid var(--border2)',
-        position:'relative', cursor: disabled ? 'default' : 'pointer',
-        transition:'background 0.22s, border 0.22s',
-        boxShadow: on ? '0 0 12px var(--accent-glow)' : 'none',
-      }}
-    >
+    <div onClick={disabled ? undefined : onChange} style={{
+      width:50, height:30, borderRadius:15, flexShrink:0,
+      background: on ? 'var(--accent)' : 'rgba(255,255,255,0.12)',
+      border: on ? 'none' : '1px solid var(--border2)',
+      position:'relative', cursor: disabled ? 'default' : 'pointer',
+      transition:'background 0.22s, border 0.22s',
+      boxShadow: on ? '0 0 12px var(--accent-glow)' : 'none',
+    }}>
       <div style={{
         position:'absolute', top:3, left: on ? 23 : 3,
-        width:22, height:22, borderRadius:'50%',
-        background:'#fff',
+        width:22, height:22, borderRadius:'50%', background:'#fff',
         boxShadow:'0 2px 6px rgba(0,0,0,0.3)',
         transition:'left 0.22s cubic-bezier(0.34,1.56,0.64,1)',
       }} />
@@ -40,7 +35,6 @@ function Toggle({ on, onChange, disabled }) {
   );
 }
 
-// ── Строка с переключателем ─────────────────────────────────
 function ToggleRow({ label, sublabel, on, onChange, disabled }) {
   return (
     <div style={{ display:'flex', alignItems:'center', padding:'13px 0', borderBottom:'1px solid var(--border)' }}>
@@ -68,120 +62,149 @@ function getPermissions(role) {
 
 export default function ProfilePage({ viewUserId, onClear }) {
   const { currentUser, logout, fetchProfile, setCurrentUser, getProfile } = useApp();
-  const [viewedProfile, setViewedProfile] = React.useState(null);
 
-  // Load other user profile if viewUserId passed
-  React.useEffect(()=>{
-    if (!viewUserId || viewUserId === currentUser?.id) { setViewedProfile(null); return; }
+  // ── Профиль для отображения (свой или чужой) ─────────────
+  const [viewedProfile, setViewedProfile] = useState(null);
+
+  useEffect(() => {
+    if (!viewUserId || viewUserId === currentUser?.id) {
+      setViewedProfile(null);
+      return;
+    }
     const cached = getProfile(viewUserId);
     if (cached) { setViewedProfile(cached); return; }
-    fetchProfile(viewUserId).then(p => setViewedProfile(p||null));
-  },[viewUserId, currentUser?.id, getProfile, fetchProfile]); // eslint-disable-line
+    fetchProfile(viewUserId).then(p => setViewedProfile(p || null));
+  }, [viewUserId, currentUser?.id]); // eslint-disable-line
 
-  const displayUser = viewedProfile || currentUser;
-  const isOwnProfile = !viewedProfile || viewedProfile?.id === currentUser?.id;
-  const role = currentUser?.role; const displayRole = displayUser?.role;
+  // displayUser — кого показываем
+  const displayUser  = (viewUserId && viewUserId !== currentUser?.id) ? viewedProfile : currentUser;
+  const isOwnProfile = !viewUserId || viewUserId === currentUser?.id;
+  const dRole        = displayUser?.role;
 
+  // ── Tabs — для чужого профиля только вкладка «Профиль» ───
   const [activeTab, setActiveTab] = useState('profile');
-  const [name,      setName]      = useState(currentUser?.name || '');
-  const [bio,       setBio]       = useState(currentUser?.bio  || '');
-  const [saving,    setSaving]    = useState(false);
-  const [saved,     setSaved]     = useState(false);
-  const [error,     setError]     = useState('');
+  useEffect(() => { setActiveTab('profile'); }, [viewUserId]);
 
-  // ── Тема ────────────────────────────────────────────────
+  const [name,    setName]    = useState('');
+  const [bio,     setBio]     = useState('');
+  const [saving,  setSaving]  = useState(false);
+  const [saved,   setSaved]   = useState(false);
+  const [error,   setError]   = useState('');
+
+  useEffect(() => {
+    if (isOwnProfile && currentUser) {
+      setName(currentUser.name || '');
+      setBio(currentUser.bio || '');
+    }
+  }, [currentUser, isOwnProfile]);
+
+  // Тема
   const [isDark, setIsDark] = useState(() => {
     const t = localStorage.getItem('terra-theme');
     return t ? t === 'dark' : true;
   });
-
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light');
     localStorage.setItem('terra-theme', isDark ? 'dark' : 'light');
   }, [isDark]);
-
-  // Инициализация темы при монтировании
   useEffect(() => {
-    const saved = localStorage.getItem('terra-theme') || 'dark';
-    document.documentElement.setAttribute('data-theme', saved);
+    const s = localStorage.getItem('terra-theme') || 'dark';
+    document.documentElement.setAttribute('data-theme', s);
   }, []);
 
-  const city   = CITIES.find(c=>c.id===(currentUser?.city_id||currentUser?.cityId));
-  const school = SCHOOLS.find(s=>s.id===(currentUser?.school_id||currentUser?.schoolId));
-  const perms  = getPermissions(role);
+  const dCity   = CITIES.find(c => c.id === (displayUser?.city_id || displayUser?.cityId));
+  const dSchool = SCHOOLS.find(s => s.id === (displayUser?.school_id || displayUser?.schoolId));
+  const perms   = getPermissions(dRole);
 
   const handleSave = async () => {
     if (!name.trim()) { setError('Имя не может быть пустым'); return; }
     setSaving(true); setError('');
-    const initials = name.trim().split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2);
-    const { error:err } = await supabase.from('profiles')
-      .update({ name:name.trim(), initials, bio:bio.trim()||null })
+    const initials = name.trim().split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
+    const { error: err } = await supabase.from('profiles')
+      .update({ name: name.trim(), initials, bio: bio.trim() || null })
       .eq('id', currentUser.id);
     if (err) { setError(err.message); setSaving(false); return; }
     const fresh = await fetchProfile(currentUser.id);
     if (fresh && setCurrentUser) setCurrentUser(fresh);
     setSaved(true); setSaving(false);
-    setTimeout(()=>setSaved(false), 2500);
+    setTimeout(() => setSaved(false), 2500);
   };
 
-  const tabs = [
-    ['profile', 'Профиль'],
-    ['settings','Настройки'],
-    ['access',  'Доступ'],
-    ['dev',     '🛠 Dev'],
-  ];
+  // Если профиль ещё загружается
+  if (viewUserId && viewUserId !== currentUser?.id && !viewedProfile) {
+    return (
+      <div style={{ maxWidth:680, margin:'0 auto', padding:'40px 22px', textAlign:'center' }}>
+        <div style={{ color:'var(--text3)', fontSize:14 }}>Загрузка профиля...</div>
+      </div>
+    );
+  }
+
+  const tabs = isOwnProfile
+    ? [['profile','Профиль'],['settings','Настройки'],['access','Доступ'],['dev','🛠 Dev']]
+    : [['profile','Профиль']];
 
   return (
     <div style={{ maxWidth:680, margin:'0 auto', overflowY:'auto', height:'100%', paddingBottom:32 }}>
 
+      {/* Кнопка «назад» при просмотре чужого профиля */}
+      {!isOwnProfile && (
+        <div style={{ padding:'16px 22px 0' }}>
+          <button onClick={onClear} className="btn-ghost" style={{ fontSize:13, display:'flex', alignItems:'center', gap:6 }}>
+            ← Назад
+          </button>
+        </div>
+      )}
+
       {/* ── Шапка профиля ── */}
-      <div style={{ padding:'28px 22px 20px', display:'flex', gap:18, alignItems:'center' }}>
+      <div style={{ padding:'24px 22px 20px', display:'flex', gap:18, alignItems:'center' }}>
         <div style={{
           width:72, height:72, borderRadius:24, flexShrink:0,
-          background: currentUser?.color || 'var(--accent)',
+          background: displayUser?.color || 'var(--accent)',
           display:'flex', alignItems:'center', justifyContent:'center',
           fontSize:26, fontWeight:800, color:'#fff',
           boxShadow:'0 4px 20px rgba(0,0,0,0.3)',
-        }}>{currentUser?.initials||'?'}</div>
+        }}>{displayUser?.initials || '?'}</div>
         <div style={{ flex:1, minWidth:0 }}>
           <div style={{ display:'flex', alignItems:'center', gap:10, flexWrap:'wrap' }}>
             <h2 style={{ fontSize:22, fontWeight:800, color:'var(--text)', letterSpacing:-0.5 }}>
-              {currentUser?.name}
+              {displayUser?.name || '—'}
             </h2>
-            <span className={`badge ${ROLE_BADGE[role]||'badge-guest'}`}>{ROLE_LABELS[role]||'Гость'}</span>
+            <span className={`badge ${ROLE_BADGE[dRole] || 'badge-guest'}`}>
+              {ROLE_LABELS[dRole] || 'Гость'}
+            </span>
           </div>
           <div style={{ fontSize:13, color:'var(--text3)', marginTop:5 }}>
-            {city ? `${city.flag} ${city.name}` : '—'}
-            {school ? ` · ${school.icon} ${school.name}` : ''}
+            {dCity  ? `${dCity.flag} ${dCity.name}` : '—'}
+            {dSchool ? ` · ${dSchool.icon} ${dSchool.name}` : ''}
           </div>
-          {currentUser?.bio && (
-            <p style={{ fontSize:14, color:'var(--text2)', marginTop:8, lineHeight:1.5 }}>{currentUser.bio}</p>
+          {displayUser?.bio && (
+            <p style={{ fontSize:14, color:'var(--text2)', marginTop:8, lineHeight:1.5 }}>{displayUser.bio}</p>
           )}
         </div>
       </div>
 
       {/* ── Вкладки ── */}
       <div className="tabs" style={{ margin:'0 22px 22px' }}>
-        {tabs.map(([t,l])=>(
-          <div key={t} className={`tab${activeTab===t?' active':''}`} onClick={()=>setActiveTab(t)}>{l}</div>
+        {tabs.map(([t, l]) => (
+          <div key={t} className={`tab${activeTab === t ? ' active' : ''}`} onClick={() => setActiveTab(t)}>{l}</div>
         ))}
       </div>
 
       <div style={{ padding:'0 22px' }}>
 
         {/* ── ПРОФИЛЬ ── */}
-        {activeTab==='profile' && (
+        {activeTab === 'profile' && (
           <div style={{ display:'flex', flexDirection:'column', gap:14 }}>
             <div className="card">
               <div className="card-header"><span className="card-title">Контакты</span></div>
               <div style={{ padding:'0 18px' }}>
                 {[
-                  ['📧','Email',   currentUser?.email],
-                  ['🌍','Город',   city ? `${city.flag} ${city.name}` : null],
-                  ['📚','Школа',   school ? `${school.icon} ${school.name}` : null],
-                  ['🔄','Поток',   currentUser?.stream_number ? `Поток ${currentUser.stream_number}` : null],
-                  ['📖','Модуль',  currentUser?.current_module ? `Модуль ${currentUser.current_module}` : null],
-                ].filter(([,,v])=>v).map(([icon,label,val])=>(
+                  ['📧', 'Email',   displayUser?.email],
+                  ['🌍', 'Город',   dCity  ? `${dCity.flag} ${dCity.name}` : null],
+                  ['📚', 'Школа',   dSchool ? `${dSchool.icon} ${dSchool.name}` : null],
+                  ['🔄', 'Поток',   displayUser?.stream_number  ? `Поток ${displayUser.stream_number}` : null],
+                  ['📖', 'Модуль',  displayUser?.current_module ? `Модуль ${displayUser.current_module}` : null],
+                ].filter(([,, v]) => v).map(([icon, label, val]) => (
                   <div key={label} style={{ display:'flex', gap:14, padding:'12px 0', borderBottom:'1px solid var(--border)' }}>
                     <span style={{ fontSize:18, width:24, textAlign:'center', flexShrink:0 }}>{icon}</span>
                     <div>
@@ -192,30 +215,32 @@ export default function ProfilePage({ viewUserId, onClear }) {
                 ))}
               </div>
             </div>
-            <button onClick={logout} className="btn-danger" style={{ alignSelf:'flex-start' }}>
-              Выйти из аккаунта
-            </button>
+            {isOwnProfile && (
+              <button onClick={logout} className="btn-danger" style={{ alignSelf:'flex-start' }}>
+                Выйти из аккаунта
+              </button>
+            )}
           </div>
         )}
 
-        {/* ── НАСТРОЙКИ ── */}
-        {activeTab==='settings' && (
+        {/* ── НАСТРОЙКИ ── (только свой профиль) */}
+        {activeTab === 'settings' && isOwnProfile && (
           <div style={{ display:'flex', flexDirection:'column', gap:14 }}>
             <div className="card">
               <div className="card-header"><span className="card-title">Редактировать профиль</span></div>
               <div className="card-body" style={{ display:'flex', flexDirection:'column', gap:14 }}>
                 <div>
                   <label className="form-label">Имя и фамилия</label>
-                  <input type="text" value={name} onChange={e=>setName(e.target.value)} />
+                  <input type="text" value={name} onChange={e => setName(e.target.value)} />
                 </div>
                 <div>
                   <label className="form-label">Email</label>
-                  <input type="email" value={currentUser?.email||''} disabled style={{ opacity:0.5, cursor:'not-allowed' }} />
+                  <input type="email" value={currentUser?.email || ''} disabled style={{ opacity:0.5, cursor:'not-allowed' }} />
                   <div style={{ fontSize:12, color:'var(--text3)', marginTop:4 }}>Email изменить нельзя</div>
                 </div>
                 <div>
                   <label className="form-label">О себе</label>
-                  <textarea value={bio} onChange={e=>setBio(e.target.value)} rows={3} placeholder="Расскажите о себе..." />
+                  <textarea value={bio} onChange={e => setBio(e.target.value)} rows={3} placeholder="Расскажите о себе..." />
                 </div>
                 {error && <div style={{ background:'var(--red-dim)', color:'var(--red)', padding:'10px 14px', borderRadius:12, fontSize:14 }}>{error}</div>}
                 {saved && <div style={{ background:'var(--green-dim)', color:'var(--green)', padding:'10px 14px', borderRadius:12, fontSize:14 }}>✅ Сохранено!</div>}
@@ -224,51 +249,40 @@ export default function ProfilePage({ viewUserId, onClear }) {
                 </button>
               </div>
             </div>
-
-            {/* Тема оформления */}
             <div className="card">
               <div className="card-header"><span className="card-title">Внешний вид</span></div>
               <div className="card-body">
                 <ToggleRow
                   label="Тёмная тема"
                   sublabel={isDark ? 'Включена — тёмный фон' : 'Выключена — светлый фон'}
-                  on={isDark}
-                  onChange={() => setIsDark(v => !v)}
-                />
+                  on={isDark} onChange={() => setIsDark(v => !v)} />
               </div>
             </div>
           </div>
         )}
 
         {/* ── ДОСТУП ── */}
-        {activeTab==='access' && (
+        {activeTab === 'access' && (
           <div className="card">
             <div className="card-header">
               <span className="card-title">Права доступа</span>
-              <span className={`badge ${ROLE_BADGE[role]||'badge-guest'}`}>{ROLE_LABELS[role]}</span>
+              <span className={`badge ${ROLE_BADGE[dRole] || 'badge-guest'}`}>{ROLE_LABELS[dRole]}</span>
             </div>
             <div style={{ padding:'0 18px' }}>
               {perms.map(perm => (
-                <ToggleRow
-                  key={perm.label}
-                  label={perm.label}
-                  sublabel={perm.sub}
-                  on={perm.has}
-                  disabled={true}
-                />
+                <ToggleRow key={perm.label} label={perm.label} sublabel={perm.sub} on={perm.has} disabled={true} />
               ))}
             </div>
-            {role==='guest' && (
+            {dRole === 'guest' && (
               <div style={{ margin:'0 18px 18px', padding:'12px 14px', background:'var(--amber-dim)', borderRadius:12, fontSize:13, color:'var(--amber)' }}>
-                💡 У вас роль «Гость». Обратитесь к администратору для получения доступа.
+                💡 Роль «Гость». Обратитесь к администратору.
               </div>
             )}
           </div>
         )}
 
-        {/* ── РАЗРАБОТЧИК ── */}
-        {activeTab==='dev' && <DevPanel inline />}
-
+        {/* ── DEV PANEL ── */}
+        {activeTab === 'dev' && <DevPanel inline />}
       </div>
     </div>
   );

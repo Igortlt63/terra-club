@@ -246,7 +246,7 @@ export function AppProvider({ children }) {
       login, logout,
       profiles, getProfile, fetchProfile,
       messages,   sendMessage,  loadMessages,
-      dmMessages, loadDmMessages,
+      dmMessages, loadDmMessages, updateLocalMessage, updateLocalDmMessage,
       unreadChannels, unreadDm, markChannelRead, setUnreadDm,
       activeView, setActiveView,
       activeChannel, setActiveChannel,
