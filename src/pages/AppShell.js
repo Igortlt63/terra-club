@@ -102,6 +102,12 @@ function NavItem({ icon, label, view, currentView, setView }) {
 
 export default function AppShell() {
   const { currentUser, logout, activeView, setActiveView, notification } = useApp();
+
+  const handleSetView = React.useCallback((view) => {
+    setActiveView(view);
+    // Сбрасываем просмотр чужого профиля при навигации
+    if (view !== 'profile') setProfileUserId(null);
+  }, [setActiveView, setProfileUserId]); // eslint-disable-line
   const [openDmWithUser, setOpenDmWithUser] = React.useState(null);
   const [profileUserId,  setProfileUserId]  = React.useState(null);
   const role = currentUser?.role;
@@ -148,7 +154,7 @@ export default function AppShell() {
             <div key={g.section}>
               <div className="section-label">{g.section}</div>
               {g.items.map(item=>(
-                <NavItem key={item.view} {...item} currentView={activeView} setView={setActiveView} />
+                <NavItem key={item.view} {...item} currentView={activeView} setView={handleSetView} />
               ))}
             </div>
           ))}
@@ -199,7 +205,7 @@ export default function AppShell() {
           {activeView==='governance' && <GovernancePage />}
           {activeView==='crm'        && <CRMPage onOpenDm={u=>{ setOpenDmWithUser(u); setActiveView('chat'); }} />}
           {activeView==='dashboard'  && <AdminDashboard />}
-          {activeView==='profile'    && <ProfilePage viewUserId={profileUserId} onClear={()=>setProfileUserId(null)} />}
+          {activeView==='profile'    && <ProfilePage viewUserId={profileUserId} onClear={()=>setProfileUserId(null)} onWriteDm={u=>{ setOpenDmWithUser(u); setProfileUserId(null); setActiveView('chat'); }} />}
           {activeView==='devpanel'   && <DevPanel />}
         </div>
       </div>
@@ -207,7 +213,7 @@ export default function AppShell() {
       {/* Мобильная нижняя панель */}
       <nav className="mobile-nav">
         {mobileTabs.map(tab=>(
-          <div key={tab.view} className={`mobile-nav-item${activeView===tab.view?' active':''}`} onClick={()=>setActiveView(tab.view)}>
+          <div key={tab.view} className={`mobile-nav-item${activeView===tab.view?' active':''}`} onClick={()=>handleSetView(tab.view)}>
             <div className="nav-icon-wrap">
               <span style={{ width:24, height:24, display:'block' }}>{tab.icon}</span>
             </div>

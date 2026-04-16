@@ -60,7 +60,7 @@ function getPermissions(role) {
   ];
 }
 
-export default function ProfilePage({ viewUserId, onClear }) {
+export default function ProfilePage({ viewUserId, onClear, onWriteDm }) {
   const { currentUser, logout, fetchProfile, setCurrentUser, getProfile } = useApp();
 
   // ── Профиль для отображения (свой или чужой) ─────────────
@@ -146,11 +146,31 @@ export default function ProfilePage({ viewUserId, onClear }) {
   return (
     <div style={{ maxWidth:680, margin:'0 auto', overflowY:'auto', height:'100%', paddingBottom:32 }}>
 
-      {/* Кнопка «назад» при просмотре чужого профиля */}
+      {/* Шапка при просмотре чужого профиля */}
       {!isOwnProfile && (
-        <div style={{ padding:'16px 22px 0' }}>
+        <div style={{ padding:'16px 22px 0', display:'flex', alignItems:'center', justifyContent:'space-between', gap:10 }}>
           <button onClick={onClear} className="btn-ghost" style={{ fontSize:13, display:'flex', alignItems:'center', gap:6 }}>
             ← Назад
+          </button>
+          <button
+            onClick={() => onWriteDm && onWriteDm(displayUser)}
+            style={{
+              padding:'9px 18px',
+              borderRadius:'var(--r-sm)',
+              background:'var(--accent)',
+              color:'#fff',
+              border:'none',
+              cursor:'pointer',
+              fontFamily:'inherit',
+              fontSize:14,
+              fontWeight:600,
+              display:'flex',
+              alignItems:'center',
+              gap:8,
+              boxShadow:'0 0 12px var(--accent-glow)',
+            }}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+            Написать сообщение
           </button>
         </div>
       )}
