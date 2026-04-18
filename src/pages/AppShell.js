@@ -10,10 +10,17 @@ import DevPanel from './DevPanel';
 import GovernancePage from './GovernancePage';
 import Logo from '../components/Logo';
 
+// ── Константы — ВСЕ вверху файла ─────────────────────────────
 const ROLE_LABELS = {
   admin:'Руководство', teacher:'Преподаватель', student:'Ученик',
   mentor:'Наставник', mentee:'Наставляемый', guest:'Гость',
   member:'Участник', developer:'Разработчик',
+};
+
+const VIEW_TITLES = {
+  chat:'Сообщения', schools:'Учёба', mentoring:'Наставничество',
+  governance:'Руководство', crm:'Участники', dashboard:'Дашборд',
+  profile:'Профиль', devpanel:'Разработчик',
 };
 
 const Icons = {
@@ -28,67 +35,49 @@ const Icons = {
   logout:     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9"/></svg>,
 };
 
-function getNavGroups(role) {
+// ── Вспомогательные функции (не хуки) ────────────────────────
+function getNavGroups(navRole) {
   const g = [];
-  g.push({ section:'Главное', items:[
-    { icon:Icons.chat, label:'Сообщения', view:'chat' },
-  ]});
+  g.push({ section:'Главное', items:[{ icon:Icons.chat, label:'Сообщения', view:'chat' }]});
 
-  if (['student','teacher','admin'].includes(role)) {
+  if (['student','teacher','admin'].includes(navRole)) {
     g.push({ section:'Обучение', items:[
-      { icon:Icons.school, label: role==='teacher' ? 'Моя школа' : 'Учёба', view:'schools' },
+      { icon:Icons.school, label: navRole==='teacher' ? 'Моя школа' : 'Учёба', view:'schools' },
     ]});
   }
-  if (['mentor','mentee','admin'].includes(role)) {
+  if (['mentor','mentee','admin'].includes(navRole)) {
     const sec = g.find(s=>s.section==='Обучение');
-    const item = { icon:Icons.mentoring, label: role==='mentor'?'Наставляемые':'Наставничество', view:'mentoring' };
-    if (sec) sec.items.push(item);
-    else g.push({ section:'Наставничество', items:[item] });
+    const item = { icon:Icons.mentoring, label: navRole==='mentor'?'Наставляемые':'Наставничество', view:'mentoring' };
+    if (sec) sec.items.push(item); else g.push({ section:'Наставничество', items:[item] });
   }
-
-  // Руководство — видят admin и те у кого есть должность (проверяется на самой странице)
-  if (['admin','teacher','mentor','member'].includes(role)) {
-    g.push({ section:'Управление', items:[
-      { icon:Icons.governance, label:'Руководство', view:'governance' },
-    ]});
+  if (['admin','teacher','mentor','member'].includes(navRole)) {
+    g.push({ section:'Управление', items:[{ icon:Icons.governance, label:'Руководство', view:'governance' }]});
   }
-
-  if (role === 'admin') {
+  if (navRole === 'admin') {
     const mgmt = g.find(s=>s.section==='Управление');
-    if (mgmt) {
-      mgmt.items.push(
-        { icon:Icons.dashboard, label:'Дашборд',    view:'dashboard' },
-        { icon:Icons.crm,       label:'Участники',  view:'crm'       },
-      );
-    }
+    if (mgmt) mgmt.items.push(
+      { icon:Icons.dashboard, label:'Дашборд',   view:'dashboard' },
+      { icon:Icons.crm,       label:'Участники', view:'crm'       },
+    );
   }
-
   g.push({ section:'Аккаунт', items:[
     { icon:Icons.profile, label:'Профиль',     view:'profile'  },
     { icon:Icons.dev,     label:'Разработчик', view:'devpanel' },
   ]});
-
   return g;
 }
 
-function getMobileTabs(role) {
+function getMobileTabs(navRole) {
   const tabs = [{ icon:Icons.chat, label:'Чат', view:'chat' }];
-  if (['student','teacher','admin'].includes(role))
+  if (['student','teacher','admin'].includes(navRole))
     tabs.push({ icon:Icons.school, label:'Учёба', view:'schools' });
-  if (['mentor','mentee'].includes(role))
+  if (['mentor','mentee'].includes(navRole))
     tabs.push({ icon:Icons.mentoring, label:'Наставник', view:'mentoring' });
   tabs.push({ icon:Icons.governance, label:'Структура', view:'governance' });
-  if (role === 'admin')
-    tabs.push({ icon:Icons.dashboard, label:'Дашборд', view:'dashboard' });
+  if (navRole === 'admin') tabs.push({ icon:Icons.dashboard, label:'Дашборд', view:'dashboard' });
   tabs.push({ icon:Icons.profile, label:'Профиль', view:'profile' });
   return tabs.slice(0, 5);
 }
-
-const VIEW_TITLES = {
-  chat:'Сообщения', schools:'Учёба', mentoring:'Наставничество',
-  governance:'Руководство', crm:'Участники', dashboard:'Дашборд',
-  profile:'Профиль', devpanel:'Разработчик',
-};
 
 function NavItem({ icon, label, view, currentView, setView }) {
   const active = currentView === view;
@@ -100,39 +89,43 @@ function NavItem({ icon, label, view, currentView, setView }) {
   );
 }
 
+// ── Главный компонент ─────────────────────────────────────────
 export default function AppShell() {
   const { currentUser, logout, activeView, setActiveView, notification } = useApp();
 
-  const handleSetView = React.useCallback((view) => {
-    setActiveView(view);
-    // Сбрасываем просмотр чужого профиля при навигации
-    if (view !== 'profile') setProfileUserId(null);
-  }, [setActiveView, setProfileUserId]); // eslint-disable-line
+  // Все useState ПЕРЕД useCallback и useEffect
   const [openDmWithUser, setOpenDmWithUser] = React.useState(null);
   const [profileUserId,  setProfileUserId]  = React.useState(null);
-  const role = currentUser?.role;
+
+  // useCallback ПОСЛЕ useState
+  const handleSetView = React.useCallback((view) => {
+    setActiveView(view);
+    if (view !== 'profile') setProfileUserId(null);
+  }, [setActiveView]); // setProfileUserId — стабильный setter, не нужен в deps
+
+  const role       = currentUser?.role;
   const navGroups  = getNavGroups(role);
   const mobileTabs = getMobileTabs(role);
+  const viewTitle  = VIEW_TITLES[activeView] || '';
 
   useEffect(() => {
+    if (!currentUser) return;
     if (role === 'admin')          setActiveView('dashboard');
     else if (role === 'developer') setActiveView('devpanel');
     else                           setActiveView('chat');
   }, [role]); // eslint-disable-line
 
-  const viewTitle = VIEW_TITLES[activeView] || '';
+  if (!currentUser) return (
+    <div style={{ display:'flex', height:'100vh', alignItems:'center', justifyContent:'center', background:'var(--bg-base)', color:'var(--text)' }}>
+      Загрузка...
+    </div>
+  );
 
   return (
     <div style={{ display:'flex', height:'100vh', overflow:'hidden', background:'var(--bg-base)' }}>
 
       {/* Десктопный сайдбар */}
-      <div className="desktop-sidebar" style={{
-        width:248, flexShrink:0,
-        background:'rgba(15,15,24,0.95)',
-        borderRight:'1px solid var(--glass-border)',
-        display:'flex', flexDirection:'column',
-      }}>
-        {/* Лого */}
+      <div className="desktop-sidebar" style={{ width:248, flexShrink:0, background:'rgba(15,15,24,0.95)', borderRight:'1px solid var(--glass-border)', display:'flex', flexDirection:'column' }}>
         <div style={{ padding:'18px 20px 14px', borderBottom:'1px solid var(--border)' }}>
           <div style={{ display:'flex', alignItems:'center', gap:12 }}>
             <Logo size={38} showText={false} />
@@ -142,13 +135,9 @@ export default function AppShell() {
             </div>
           </div>
         </div>
-
-        {/* Роль */}
         <div style={{ padding:'10px 20px', borderBottom:'1px solid var(--border)' }}>
           <span className={`badge badge-${role}`}>{ROLE_LABELS[role]||'Гость'}</span>
         </div>
-
-        {/* Навигация */}
         <div style={{ flex:1, overflowY:'auto', paddingBottom:8 }}>
           {navGroups.map(g=>(
             <div key={g.section}>
@@ -159,8 +148,6 @@ export default function AppShell() {
             </div>
           ))}
         </div>
-
-        {/* Пользователь */}
         <div style={{ padding:'14px 18px', borderTop:'1px solid var(--border)', display:'flex', alignItems:'center', gap:10 }}>
           <div className="avatar avatar-sm" style={{ background:currentUser?.color||'var(--accent)', flexShrink:0 }}>
             {currentUser?.initials||'?'}
@@ -169,11 +156,9 @@ export default function AppShell() {
             <div style={{ fontSize:13, fontWeight:600, color:'var(--text)', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{currentUser?.name}</div>
             <div style={{ fontSize:11, color:'var(--text4)', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{currentUser?.email}</div>
           </div>
-          <button onClick={logout}
-            style={{ width:28, height:28, borderRadius:8, background:'transparent', border:'1px solid var(--border2)', color:'var(--text3)', display:'flex', alignItems:'center', justifyContent:'center', padding:0 }}
+          <button onClick={logout} style={{ width:28, height:28, borderRadius:8, background:'transparent', border:'1px solid var(--border2)', color:'var(--text3)', display:'flex', alignItems:'center', justifyContent:'center', padding:0 }}
             onMouseEnter={e=>e.currentTarget.style.color='var(--red)'}
-            onMouseLeave={e=>e.currentTarget.style.color='var(--text3)'}
-          >
+            onMouseLeave={e=>e.currentTarget.style.color='var(--text3)'}>
             <span style={{ width:14, height:14 }}>{Icons.logout}</span>
           </button>
         </div>
@@ -182,22 +167,15 @@ export default function AppShell() {
       {/* Основной контент */}
       <div style={{ flex:1, display:'flex', flexDirection:'column', overflow:'hidden', minWidth:0, background:'var(--bg-surface)' }}>
         {activeView !== 'chat' && (
-          <div className="desktop-topbar" style={{
-            padding:'14px 24px', borderBottom:'1px solid var(--border)',
-            display:'flex', alignItems:'center', justifyContent:'space-between',
-            flexShrink:0, background:'rgba(15,15,24,0.8)', backdropFilter:'blur(20px)',
-          }}>
+          <div className="desktop-topbar" style={{ padding:'14px 24px', borderBottom:'1px solid var(--border)', display:'flex', alignItems:'center', justifyContent:'space-between', flexShrink:0, background:'rgba(15,15,24,0.8)', backdropFilter:'blur(20px)' }}>
             <div style={{ fontSize:20, fontWeight:800, color:'var(--text)', letterSpacing:-0.5 }}>{viewTitle}</div>
             <div className="avatar avatar-sm" style={{ background:currentUser?.color||'var(--accent)', cursor:'pointer' }}
-              onClick={()=>setActiveView('profile')}>{currentUser?.initials||'?'}</div>
+              onClick={()=>handleSetView('profile')}>{currentUser?.initials||'?'}</div>
           </div>
         )}
         {activeView !== 'chat' && (
-          <div className="mobile-header">
-            <div className="mobile-header-title">{viewTitle}</div>
-          </div>
+          <div className="mobile-header"><div className="mobile-header-title">{viewTitle}</div></div>
         )}
-
         <div style={{ flex:1, overflow:'hidden', display:'flex', flexDirection:'column' }} className="main-scroll-area">
           {activeView==='chat'       && <ChatLayout openDmWithUser={openDmWithUser} onDmOpened={()=>setOpenDmWithUser(null)} onOpenProfile={uid=>{ setProfileUserId(uid); setActiveView('profile'); }} />}
           {activeView==='schools'    && <SchoolsCabinet />}
@@ -210,13 +188,11 @@ export default function AppShell() {
         </div>
       </div>
 
-      {/* Мобильная нижняя панель */}
+      {/* Мобильная навигация */}
       <nav className="mobile-nav">
         {mobileTabs.map(tab=>(
           <div key={tab.view} className={`mobile-nav-item${activeView===tab.view?' active':''}`} onClick={()=>handleSetView(tab.view)}>
-            <div className="nav-icon-wrap">
-              <span style={{ width:24, height:24, display:'block' }}>{tab.icon}</span>
-            </div>
+            <div className="nav-icon-wrap"><span style={{ width:24, height:24, display:'block' }}>{tab.icon}</span></div>
             <span>{tab.label}</span>
           </div>
         ))}
