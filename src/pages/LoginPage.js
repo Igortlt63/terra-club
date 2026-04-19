@@ -48,8 +48,9 @@ export default function LoginPage() {
     <div style={{
       minHeight:'100vh', background:'var(--bg-base)',
       display:'flex', flexDirection:'column',
-      alignItems:'center', justifyContent:'center',
-      padding:'24px 20px',
+      alignItems:'center', justifyContent:'flex-start',
+      padding:'40px 20px 60px',
+      overflowY:'auto',
       backgroundImage:'radial-gradient(ellipse at 50% 0%, rgba(59,130,246,0.12) 0%, transparent 60%)',
     }}>
 
@@ -68,7 +69,6 @@ export default function LoginPage() {
         borderRadius:28,
         backdropFilter:'blur(24px)', WebkitBackdropFilter:'blur(24px)',
         boxShadow:'0 24px 64px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.1)',
-        overflow:'hidden',
       }}>
         {/* Переключатель */}
         {mode!=='forgot' && (

@@ -4,11 +4,21 @@ import { SCHOOLS, CITIES } from '../data/db';
 
 function StatCard({ icon, label, value, sub }) {
   return (
-    <div style={{ background:'var(--bg-raised)', border:'1px solid var(--border)', borderRadius:'var(--r)', padding:'16px 18px' }}>
-      <div style={{ fontSize:22, marginBottom:8 }}>{icon}</div>
-      <div style={{ fontSize:11, color:'var(--text3)', marginBottom:4, fontWeight:600, textTransform:'uppercase', letterSpacing:'0.5px' }}>{label}</div>
-      <div style={{ fontSize:26, fontWeight:800, color:'var(--text)', letterSpacing:-0.5 }}>{value===null?'…':value}</div>
-      {sub && <div style={{ fontSize:12, color:'var(--text3)', marginTop:4 }}>{sub}</div>}
+    <div style={{
+      background:'var(--bg-raised)', border:'1px solid var(--border)',
+      borderRadius:20, padding:'14px 18px',
+      display:'flex', alignItems:'center', gap:14,
+    }}>
+      <div style={{
+        width:44, height:44, borderRadius:14, background:'var(--accent-dim)',
+        display:'flex', alignItems:'center', justifyContent:'center',
+        fontSize:22, flexShrink:0,
+      }}>{icon}</div>
+      <div style={{ flex:1, minWidth:0 }}>
+        <div style={{ fontSize:11, color:'var(--text3)', fontWeight:600, textTransform:'uppercase', letterSpacing:'0.5px', marginBottom:2 }}>{label}</div>
+        <div style={{ fontSize:24, fontWeight:800, color:'var(--text)', letterSpacing:-0.5, lineHeight:1 }}>{value===null?'…':value}</div>
+        {sub && <div style={{ fontSize:12, color:'var(--text3)', marginTop:3 }}>{sub}</div>}
+      </div>
     </div>
   );
 }
@@ -109,7 +119,7 @@ export default function AdminDashboard() {
           <select
             value={selectedCity}
             onChange={e=>handleCityChange(e.target.value)}
-            style={{ padding:'9px 14px', border:'1px solid var(--border2)', borderRadius:'var(--r-sm)', fontSize:14, background:'var(--bg-raised)', color:'var(--text)', minWidth:160 }}
+            style={{ padding:'9px 16px', border:'1px solid var(--border2)', borderRadius:20, fontSize:14, background:'var(--bg-raised)', color:'var(--text)', minWidth:160, outline:'none', cursor:'pointer' }}
           >
             <option value="all">🌍 Все города</option>
             {CITIES.map(c=><option key={c.id} value={c.id}>{c.flag} {c.name}</option>)}
@@ -125,7 +135,7 @@ export default function AdminDashboard() {
       </div>
 
       {/* Цифры */}
-      <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit,minmax(160px,1fr))', gap:14, marginBottom:24 }}>
+      <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit,minmax(140px,1fr))', gap:14, marginBottom:24 }}>
         <StatCard icon="👥" label="Участников" value={stats.total}    sub={loading?'Загрузка…':null} />
         <StatCard icon="🎓" label="Учеников"   value={stats.students} />
         <StatCard icon="🌱" label="Наставников" value={stats.mentors} />

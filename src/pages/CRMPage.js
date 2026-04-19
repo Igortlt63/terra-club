@@ -66,7 +66,7 @@ function EditModal({ user, onClose, onSaved }) {
         <div style={S.field}>
           <label style={S.label}>Участник</label>
           <div style={{ fontSize: 14, fontWeight: 500 }}>{user.name}</div>
-          <div style={{ fontSize: 12, color: '#9A9A9A' }}>{user.email}</div>
+          <div style={{ fontSize: 12, color: 'var(--text3)' }}>{user.email}</div>
         </div>
 
         {/* Роль */}
@@ -112,7 +112,7 @@ function EditModal({ user, onClose, onSaved }) {
           </div>
         )}
 
-        {error && <div style={{ color: '#DC2626', fontSize: 13, marginBottom: 12 }}>{error}</div>}
+        {error && <div style={{ color: 'var(--red)', fontSize: 13, marginBottom: 12 }}>{error}</div>}
 
         <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
           <button onClick={onClose} style={S.btnCancel}>Отмена</button>
@@ -363,7 +363,7 @@ export default function CRMPage({ onOpenDm }) {
 
 const S = {
   field:     { marginBottom: 14 },
-  label:     { display: 'block', fontSize: 11, fontWeight: 600, color: '#6B7280', textTransform: 'uppercase', letterSpacing: '0.4px', marginBottom: 6 },
+  label:     { display: 'block', fontSize: 11, fontWeight: 600, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '0.4px', marginBottom: 6 },
   select:    { width: '100%', padding: '8px 10px', border: '1px solid var(--border2)', borderRadius: 8, fontSize: 13, outline: 'none', background: 'var(--bg-raised)' },
   btnCancel: { padding: '8px 16px', borderRadius: 8, border: '1px solid var(--border2)', background: 'var(--bg-raised)', fontSize: 13, cursor: 'pointer', fontFamily: 'inherit' },
   btnSave:   { padding: '8px 20px', borderRadius: 8, border: 'none', background: '#C9922A', color: '#fff', fontSize: 13, cursor: 'pointer', fontFamily: 'inherit', fontWeight: 500 },
