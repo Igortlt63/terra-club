@@ -416,7 +416,7 @@ textarea { resize:none; }
   color:var(--text); border-radius:4px 18px 18px 18px;
   padding:10px 14px; font-size:15px; line-height:1.45;
   max-width:75%; word-break:break-word;
-
+}
 /* ── Выделение текста без чёрного фона ──────────────────── */
 ::selection {
   background: rgba(59,130,246,0.3);
