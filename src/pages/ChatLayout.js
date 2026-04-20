@@ -3,10 +3,12 @@ import { useApp } from '../context/AppContext';
 import { CITY_CHANNELS, SCHOOLS, CITIES } from '../data/db';
 import { supabase } from '../supabase';
 
-// ── Все константы на уровне модуля ──────────────────────────
+// ── Константы модуля ─────────────────────────────────────────
 const ADMIN_ROLES = ['admin'];
 const CAN_CREATE  = ['admin', 'teacher', 'mentor'];
 const CAN_MANAGE  = ['admin', 'teacher', 'mentor'];
+// FIX 6: гости не могут инициировать DM
+const CAN_INIT_DM = ['admin', 'teacher', 'student', 'mentor', 'mentee', 'member', 'developer'];
 
 const ROLE_RU = {
   admin:'Руководство', teacher:'Преподаватель', student:'Ученик',
@@ -34,7 +36,6 @@ const IC = {
   menu:   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>,
   check:  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>,
   emoji:  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8 13s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>,
-  link:   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg>,
 };
 
 const MOD = {
@@ -55,65 +56,63 @@ const F = {
 const EMOJI_CATS = [
   {label:'😊',emojis:['😀','😃','😄','😁','😆','😅','🤣','😂','🙂','😊','😇','🥰','😍','🤩','😘','😗','😚','😙','😋','😛','😜','🤪','😝','🤑','🤗','🤔','🤐','🤨','😐','😑','😶','😏','😒','🙄','😬','🤥','😌','😔','😪','😴','😷','🤒','🤕','🤢','🤧','🥵','🥶','😵','🤯','🥳','😎','🤓','😕','😟','🙁','😮','😯','😲','😳','🥺','😦','😧','😨','😰','😥','😢','😭','😱','😖','😣','😞','😩','😫','😤','😡','😠','🤬','😈','👿','💀']},
   {label:'👋',emojis:['👋','🤚','🖐','✋','🖖','👌','✌️','🤞','🤟','🤘','🤙','👈','👉','👆','👇','☝️','👍','👎','✊','👊','🤛','🤜','👏','🙌','🤝','🙏','💅','💪','🦵','🦶','👂','👃','👀','👅','👄']},
-  {label:'❤️',emojis:['❤️','🧡','💛','💚','💙','💜','🖤','🤍','🤎','💔','❣️','💕','💞','💓','💗','💖','💘','💝','🔥','✨','⭐','🌟','💫','⚡','🌈','🎯','🎉','🎊','🎁','🎈','💬','💭','💤','🏆','👑','🎖']},
+  {label:'❤️',emojis:['❤️','🧡','💛','💚','💙','💜','🖤','🤍','🤎','💔','❣️','💕','💞','💓','💗','💖','💘','💝','🔥','✨','⭐','🌟','💫','⚡','🌈','🎯','🎉','🎊','🎁','🎈','💬','💭','💤','🏆','👑']},
   {label:'🐶',emojis:['🐶','🐱','🐭','🐹','🐰','🦊','🐻','🐼','🐨','🐯','🦁','🐮','🐷','🐸','🐵','🙈','🙉','🙊','🐔','🐧','🐦','🦆','🦅','🦉','🐺','🐴','🦄','🐝','🐛','🦋','🐌','🐞','🐜','🐢','🐍','🐙','🦑','🦐','🐡','🐟','🐠','🐬','🐳','🦈']},
-  {label:'🍕',emojis:['🍕','🍔','🌮','🌯','🥙','🥚','🍳','🥘','🍲','🥗','🍿','🥞','🥩','🍗','🍖','🌭','🧀','🍱','🍣','🍛','🍜','🍝','🍤','🍙','🍚','🧁','🍰','🎂','🍮','🍭','🍬','🍫','🍩','🍪','🍯','🥜','🍎','🍊','🍋','🍇','🍓','🍑','🍒','🥝','🍍','🥥']},
+  {label:'🍕',emojis:['🍕','🍔','🌮','🌯','🥙','🥚','🍳','🥘','🍲','🥗','🍿','🥞','🥩','🍗','🍖','🌭','🧀','🍱','🍣','🍛','🍜','🍝','🍤','🍙','🍚','🧁','🍰','🎂','🍮','🍭','🍬','🍫','🍩','🍪','🍯','🍎','🍊','🍋','🍇','🍓','🍑','🍒','🥝','🍍','🥥']},
   {label:'⚽',emojis:['⚽','🏀','🏈','⚾','🎾','🏐','🏉','🎱','🏓','🏸','🥊','🥋','🎽','🛹','⛸','🎿','🏆','🥇','🥈','🥉','🏅','🎖','🎪','🎭','🎨','🎬','🎤','🎧','🎵','🎶','🎹','🥁','🎸','🎺','🎻']},
   {label:'🚗',emojis:['🚗','🚕','🚙','🚌','🏎','🚓','🚑','🚒','🚚','🚜','🏍','🛵','🚲','🚁','🚀','✈️','🛩','🚂','🚢','⛵','🛥','🚤','🏔','🌋','🏕','🏖','🏜','🏝','🏠','🏢','🏥','🌍','🌎','🌏','🗺️','🧭','⛺','🌃','🌆','🌇','🌉']},
 ];
 
-// ── Вспомогательные функции ──────────────────────────────────
-function loadDMs() { try { return JSON.parse(localStorage.getItem(DM_KEY)||'{}'); } catch { return {}; } }
+// ── Helpers ───────────────────────────────────────────────────
+function loadDMs()  { try { return JSON.parse(localStorage.getItem(DM_KEY)||'{}'); } catch { return {}; } }
 function saveDMs(d) { try { localStorage.setItem(DM_KEY, JSON.stringify(d)); } catch {} }
 function canWrite(role, ch) { if (ch?.readonly) return ADMIN_ROLES.includes(role); return true; }
 
-// ── FIX 4: Рендер текста с гиперссылками и переносами строк ─
+// FIX 4: форматирование edited_at
+function fmtEdited(editedAt) {
+  if (!editedAt) return '';
+  const d = new Date(editedAt);
+  const now = new Date();
+  const dateStr = d.toDateString() === now.toDateString()
+    ? ''
+    : d.toLocaleDateString('ru', {day:'numeric',month:'short'}) + ' ';
+  const timeStr = d.toLocaleTimeString('ru', {hour:'2-digit',minute:'2-digit'});
+  return `изм. ${dateStr}${timeStr}`;
+}
+
+// FIX 4+текст с ссылками и переносами
 function MessageText({ text }) {
-  const URL_RE = /(https?:\/\/[^\s<>"{}|\\^`\[\]]+)/g;
+  const URL_RE = /(https?:\/\/[^\s<>"{}|\\^`[\]]+)/g;
   const parts  = text.split(URL_RE);
   return (
     <span>
       {parts.map((part, i) => {
-        if (URL_RE.test(part)) {
-          URL_RE.lastIndex = 0;
-          return (
-            <a key={i} href={part} target="_blank" rel="noopener noreferrer"
-              style={{color:'var(--accent-bright)',textDecoration:'underline',wordBreak:'break-all'}}>
-              {part}
-            </a>
-          );
+        if (/^https?:\/\//.test(part)) {
+          return <a key={i} href={part} target="_blank" rel="noopener noreferrer" style={{color:'var(--accent-bright)',textDecoration:'underline',wordBreak:'break-all'}}>{part}</a>;
         }
-        // FIX 5: сохраняем переносы строк
         return part.split('\n').map((line, j, arr) => (
-          <React.Fragment key={`${i}-${j}`}>
-            {line}
-            {j < arr.length-1 && <br/>}
-          </React.Fragment>
+          <React.Fragment key={`${i}-${j}`}>{line}{j < arr.length-1 && <br/>}</React.Fragment>
         ));
       })}
     </span>
   );
 }
 
-// ── FIX 1: Разделитель даты ───────────────────────────────────
 function formatDateLabel(dateStr) {
   if (!dateStr) return '';
-  const d   = new Date(dateStr);
+  const d = new Date(dateStr);
   const now = new Date();
-  const yesterday = new Date(now); yesterday.setDate(now.getDate()-1);
-  const dStr = d.toDateString();
-  if (dStr === now.toDateString())       return 'Сегодня';
-  if (dStr === yesterday.toDateString()) return 'Вчера';
-  return d.toLocaleDateString('ru', { day:'numeric', month:'long', year: d.getFullYear()!==now.getFullYear()?'numeric':undefined });
+  const yest = new Date(now); yest.setDate(now.getDate()-1);
+  if (d.toDateString()===now.toDateString())  return 'Сегодня';
+  if (d.toDateString()===yest.toDateString()) return 'Вчера';
+  return d.toLocaleDateString('ru', {day:'numeric',month:'long',year:d.getFullYear()!==now.getFullYear()?'numeric':undefined});
 }
 
 function DateDivider({ label }) {
   return (
     <div style={{display:'flex',alignItems:'center',gap:12,margin:'16px 0 12px',userSelect:'none'}}>
       <div style={{flex:1,height:1,background:'var(--border)'}}/>
-      <div style={{fontSize:11,fontWeight:600,color:'var(--text3)',padding:'2px 10px',background:'var(--bg-raised)',borderRadius:10,border:'1px solid var(--border)',letterSpacing:0.3}}>
-        {label}
-      </div>
+      <div style={{fontSize:11,fontWeight:600,color:'var(--text3)',padding:'2px 10px',background:'var(--bg-raised)',borderRadius:10,border:'1px solid var(--border)',letterSpacing:0.3}}>{label}</div>
       <div style={{flex:1,height:1,background:'var(--border)'}}/>
     </div>
   );
@@ -164,30 +163,47 @@ function EmojiPicker({ onSelect, onClose }) {
 }
 
 // ── Модалка канала ────────────────────────────────────────────
-function ChannelModal({ channel, cityId, schoolId, mentorId, onClose, onSaved }) {
+function ChannelModal({ channel, cityId, schoolId, mentorId, sectionHint, onClose, onSaved }) {
   const { currentUser } = useApp();
   const [name,     setName]     = useState(channel?.name||'');
   const [desc,     setDesc]     = useState(channel?.description||'');
   const [icon,     setIcon]     = useState(channel?.icon||'💬');
-  const [readonly, setReadonly] = useState(channel?(channel.readonly_roles||[]).includes('student'):true);
+  const [readonly, setReadonly] = useState(channel?(channel.readonly_roles||[]).includes('student'):false);
   const [saving,   setSaving]   = useState(false);
   const [error,    setError]    = useState('');
+
   const save = async () => {
     if (!name.trim()) { setError('Введите название'); return; }
     setSaving(true);
-    const p = { name:name.trim(), description:desc.trim()||null, icon, city_id:cityId||null, school_id:schoolId||null, mentor_id:mentorId||null, type:schoolId?'school':mentorId?'mentor':'city', readonly_roles:readonly?['guest','student','member','mentee']:[], write_roles:['admin','teacher','mentor'], created_by:currentUser.id };
-    const { error:err } = channel?.id ? await supabase.from('channels').update(p).eq('id',channel.id) : await supabase.from('channels').insert(p);
+    // FIX 8: правильно определяем section из sectionHint
+    const isSchool  = !!schoolId;
+    const isMentor  = !!mentorId;
+    const chType    = isSchool ? 'school' : isMentor ? 'mentor' : 'city';
+    const p = {
+      name:name.trim(), description:desc.trim()||null, icon,
+      city_id:cityId||null, school_id:schoolId||null, mentor_id:mentorId||null,
+      type:chType,
+      readonly_roles:readonly?['guest','student','member','mentee']:[],
+      write_roles:['admin','teacher','mentor'],
+      created_by:currentUser.id,
+    };
+    const { error:err } = channel?.id
+      ? await supabase.from('channels').update(p).eq('id',channel.id)
+      : await supabase.from('channels').insert(p);
     if (err) { setError(err.message); setSaving(false); return; }
     onSaved(); onClose();
   };
+
   return (
     <div style={MOD.overlay} onClick={onClose}>
       <div style={MOD.sheet} onClick={e=>e.stopPropagation()}>
-        <div style={MOD.handle}/><div style={MOD.header}><span style={MOD.title}>{channel?'Редактировать':'Новый канал'}</span><button onClick={onClose} style={MOD.closeBt}>{IC.close}</button></div>
+        <div style={MOD.handle}/>
+        <div style={MOD.header}><span style={MOD.title}>{channel?'Редактировать':'Новый канал'}</span><button onClick={onClose} style={MOD.closeBt}>{IC.close}</button></div>
         <div style={MOD.body}>
           <div style={F.field}><label style={F.label}>Иконка</label><div style={{display:'flex',gap:8,flexWrap:'wrap'}}>{ICONS_LIST.map(ic=>(<button key={ic} onClick={()=>setIcon(ic)} style={{width:36,height:36,fontSize:18,borderRadius:8,border:'none',cursor:'pointer',background:icon===ic?'var(--accent-dim)':'var(--bg-overlay)',outline:icon===ic?'2px solid var(--accent)':'none',transition:'all 0.15s'}}>{ic}</button>))}</div></div>
           <div style={F.field}><label style={F.label}>Название *</label><input value={name} onChange={e=>setName(e.target.value)} placeholder="Название канала"/></div>
           <div style={F.field}><label style={F.label}>Описание</label><input value={desc} onChange={e=>setDesc(e.target.value)} placeholder="Краткое описание"/></div>
+          {sectionHint && <div style={{fontSize:12,color:'var(--text3)',padding:'8px 12px',background:'var(--bg-overlay)',borderRadius:8}}>Канал будет добавлен в секцию: <strong style={{color:'var(--text)'}}>{sectionHint}</strong></div>}
           <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'10px 0'}}>
             <div><div style={{fontSize:15,color:'var(--text)',fontWeight:500}}>Только для чтения</div><div style={{fontSize:12,color:'var(--text3)',marginTop:2}}>Ученики и участники не могут писать</div></div>
             <Toggle on={readonly} onChange={()=>setReadonly(v=>!v)}/>
@@ -206,13 +222,15 @@ function DMPickerModal({ onClose, onSelect }) {
   const [users,  setUsers]  = useState([]);
   const [search, setSearch] = useState('');
   useEffect(() => {
-    supabase.from('profiles').select('id,name,initials,color,role,email').then(({data})=>setUsers((data||[]).filter(u=>u.id!==currentUser.id)));
+    supabase.from('profiles').select('id,name,initials,color,role,email')
+      .then(({data})=>setUsers((data||[]).filter(u=>u.id!==currentUser.id)));
   }, [currentUser.id]);
   const filtered = users.filter(u=>(u.name||'').toLowerCase().includes(search.toLowerCase())||(u.email||'').toLowerCase().includes(search.toLowerCase()));
   return (
     <div style={MOD.overlay} onClick={onClose}>
       <div style={MOD.sheet} onClick={e=>e.stopPropagation()}>
-        <div style={MOD.handle}/><div style={MOD.header}><span style={MOD.title}>Новое личное сообщение</span><button onClick={onClose} style={MOD.closeBt}>{IC.close}</button></div>
+        <div style={MOD.handle}/>
+        <div style={MOD.header}><span style={MOD.title}>Новое личное сообщение</span><button onClick={onClose} style={MOD.closeBt}>{IC.close}</button></div>
         <div style={{padding:'12px 20px 0'}}><input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Поиск..." style={{width:'100%',padding:'10px 14px',borderRadius:10,border:'1px solid var(--border2)',background:'var(--bg-overlay)',color:'var(--text)',fontFamily:'inherit',fontSize:14,outline:'none'}}/></div>
         <div style={{overflowY:'auto',maxHeight:380,padding:'8px 0'}}>
           {filtered.map(u=>(
@@ -242,7 +260,6 @@ function MessageBubble({ msg, allMsgs, onReply, onPin, onEdit, onDelete, onReact
   const sender = isMe ? currentUser : (getProfile(uid)||{name:'Участник',initials:'?',color:'#888',role:'guest'});
   const [showMenu,  setShowMenu]  = useState(false);
   const [showReact, setShowReact] = useState(false);
-
   const isDeleted = !!msg.deleted_at;
   const replyId   = msg.reply_to || msg.replyTo;
   const replyMsg  = replyId ? allMsgs.find(m=>m.id===replyId) : null;
@@ -270,10 +287,12 @@ function MessageBubble({ msg, allMsgs, onReply, onPin, onEdit, onDelete, onReact
             {replyMsg.text?.slice(0,80)}{(replyMsg.text?.length||0)>80?'…':''}
           </div>
         )}
-        {/* FIX 4+5: MessageText рендерит ссылки и переносы */}
         <div className={isMe?'bubble-me':'bubble-other'} style={isDeleted?{opacity:0.5,fontStyle:'italic'}:{wordBreak:'break-word',overflowWrap:'break-word'}}>
           {isDeleted ? 'Сообщение удалено' : <MessageText text={msg.text||''}/>}
-          {msg.edited_at&&!isDeleted&&<span style={{fontSize:10,opacity:0.55,marginLeft:6,whiteSpace:'nowrap'}}>изм.</span>}
+          {/* FIX 4: дата и время редактирования */}
+          {msg.edited_at&&!isDeleted&&(
+            <span style={{fontSize:10,opacity:0.55,marginLeft:6,whiteSpace:'nowrap'}}>{fmtEdited(msg.edited_at)}</span>
+          )}
         </div>
         {hasReactions&&(
           <div style={{display:'flex',gap:4,marginTop:4,flexWrap:'wrap',justifyContent:isMe?'flex-end':'flex-start'}}>
@@ -301,13 +320,13 @@ function MessageBubble({ msg, allMsgs, onReply, onPin, onEdit, onDelete, onReact
   );
 }
 
-// ── FIX 1+3: Список сообщений с датами и scroll-to-pinned ────
+// ── Список сообщений ─────────────────────────────────────────
 function MessageList({ channelKey, isDM, dmUserId, onReply, onPin, onEdit, onDelete, onReact, canManage, onOpenProfile, scrollToPinnedId }) {
   const { messages, loadMessages, dmMessages, loadDmMessages, markChannelRead } = useApp();
   const [chanReady, setChanReady] = useState(false);
   const [dmReady,   setDmReady]   = useState(false);
-  const bottomRef  = useRef();
-  const msgRefs    = useRef({}); // id -> ref
+  const bottomRef = useRef();
+  const msgRefs   = useRef({});
 
   useEffect(() => {
     if (isDM) return;
@@ -325,37 +344,31 @@ function MessageList({ channelKey, isDM, dmUserId, onReply, onPin, onEdit, onDel
   const isReady = isDM ? dmReady : chanReady;
 
   useEffect(() => { bottomRef.current?.scrollIntoView({behavior:'smooth'}); }, [msgList.length]);
-
-  // FIX 3: прокрутка к закреплённому сообщению
   useEffect(() => {
     if (!scrollToPinnedId) return;
     const el = msgRefs.current[scrollToPinnedId];
-    if (el) el.scrollIntoView({behavior:'smooth', block:'center'});
+    if (el) el.scrollIntoView({behavior:'smooth',block:'center'});
   }, [scrollToPinnedId]);
 
   if (!isReady) return <div className="empty-state" style={{flex:1}}><div style={{fontSize:13,color:'var(--text3)'}}>Загрузка...</div></div>;
   if (msgList.length===0) return <div className="empty-state" style={{flex:1}}><div className="icon">💬</div><p>Нет сообщений.<br/>Напишите первым!</p></div>;
 
-  // FIX 1: группируем по дате
   const grouped = [];
-  let lastDate  = null;
+  let lastDate = null;
   msgList.forEach(msg => {
-    const dateKey = msg.date || (msg.created_at ? msg.created_at.slice(0,10) : null);
-    if (dateKey && dateKey !== lastDate) {
-      grouped.push({ type:'date', key:dateKey, label:formatDateLabel(dateKey) });
-      lastDate = dateKey;
-    }
-    grouped.push({ type:'msg', msg });
+    const dk = msg.date || (msg.created_at?msg.created_at.slice(0,10):null);
+    if (dk && dk!==lastDate) { grouped.push({type:'date',key:dk,label:formatDateLabel(dk)}); lastDate=dk; }
+    grouped.push({type:'msg',msg});
   });
 
   return (
     <div style={{flex:1,overflowY:'auto',padding:'16px 16px 8px'}}>
-      {grouped.map((item, i) => {
-        if (item.type === 'date') return <DateDivider key={`d-${item.key}`} label={item.label}/>;
+      {grouped.map((item) => {
+        if (item.type==='date') return <DateDivider key={`d-${item.key}`} label={item.label}/>;
         const msg = item.msg;
         return (
           <MessageBubble key={msg.id} msg={msg} allMsgs={msgList}
-            msgRef={el=>{ if (el) msgRefs.current[msg.id]=el; }}
+            msgRef={el=>{ if(el) msgRefs.current[msg.id]=el; }}
             onReply={onReply} onPin={onPin} onEdit={onEdit}
             onDelete={onDelete} onReact={onReact} canManage={canManage}
             onOpenProfile={onOpenProfile}/>
@@ -367,20 +380,15 @@ function MessageList({ channelKey, isDM, dmUserId, onReply, onPin, onEdit, onDel
 }
 
 // ── Поле ввода ────────────────────────────────────────────────
-function MessageInput({ channelKey, readonly, isDM, dmUserId, replyTo, onClearReply, editingMsg, onCancelEdit }) {
+function MessageInput({ channelKey, readonly, isDM, dmUserId, replyTo, onClearReply, editingMsg, onCancelEdit, onEditSaved }) {
   const { sendMessage, currentUser } = useApp();
   const [inputText, setInputText] = useState('');
   const [showEmoji, setShowEmoji] = useState(false);
   const taRef = useRef();
 
-  // FIX 5: при входе в режим редактирования — заполняем поле без изменений
   useEffect(() => {
-    if (editingMsg) {
-      setInputText(editingMsg.text||'');
-      setTimeout(()=>taRef.current?.focus(), 50);
-    } else {
-      setInputText('');
-    }
+    if (editingMsg) { setInputText(editingMsg.text||''); setTimeout(()=>taRef.current?.focus(),50); }
+    else { setInputText(''); }
   }, [editingMsg]);
 
   const insertEmoji = (em) => {
@@ -393,18 +401,27 @@ function MessageInput({ channelKey, readonly, isDM, dmUserId, replyTo, onClearRe
   };
 
   const handleSend = async () => {
-    // FIX 5: НЕ trim() — только убираем пробелы с краёв, но сохраняем \n внутри
-    const trimmed = inputText.replace(/^[\t ]+|[\t ]+$/g, ''); // убираем только пробелы/табы
+    // FIX 7: trim only leading/trailing whitespace (NOT newlines) to preserve multiline
+    const trimmed = inputText.replace(/^[ \t\r]+|[ \t\r]+$/g,'');
     if (!trimmed) return;
     setInputText('');
     if (editingMsg) {
       const tbl = isDM ? 'direct_messages' : 'messages';
-      await supabase.from(tbl).update({ text: trimmed, edited_at: new Date().toISOString() }).eq('id', editingMsg.id);
+      const now = new Date().toISOString();
+      const { error } = await supabase.from(tbl)
+        .update({ text:trimmed, edited_at:now })
+        .eq('id', editingMsg.id);
+      if (error) {
+        console.error('edit error:', error.message);
+      } else {
+        // FIX 2+7: optimistic local update immediately (no wait for realtime)
+        onEditSaved?.({ ...editingMsg, text:trimmed, edited_at:now });
+      }
       onCancelEdit?.();
       return;
     }
     if (isDM&&dmUserId) {
-      await supabase.from('direct_messages').insert({ from_user_id:currentUser.id, to_user_id:dmUserId, text:trimmed, reply_to:replyTo?.id||null });
+      await supabase.from('direct_messages').insert({from_user_id:currentUser.id,to_user_id:dmUserId,text:trimmed,reply_to:replyTo?.id||null});
     } else {
       await sendMessage(channelKey, trimmed, replyTo?.id||null);
     }
@@ -479,25 +496,34 @@ export default function ChatLayout({ openDmWithUser, onDmOpened, onOpenProfile }
   const city   = CITIES.find(c=>c.id===cityId);
   const dmOpenedRef = useRef(false);
 
-  const [activeDMs,       setActiveDMs]       = useState(()=>loadDMs());
-  const [selectedCh,      setSelectedCh]      = useState(null);
-  const [showSidebar,     setShowSidebar]      = useState(false);
-  const [compact,         setCompact]          = useState(false);
-  const [channelModal,    setChannelModal]     = useState(null);
-  const [dmPicker,        setDmPicker]         = useState(false);
-  const [replyTo,         setReplyTo]          = useState(null);
-  const [editingMsg,      setEditingMsg]       = useState(null);
-  const [pinnedMsg,       setPinnedMsg]        = useState(null);
-  const [scrollToPinned,  setScrollToPinned]   = useState(null); // FIX 3
-  const [searchQuery,     setSearchQuery]      = useState('');
-  const [showSearch,      setShowSearch]       = useState(false);
-  const [dynChannels,     setDynChannels]      = useState([]);
+  const [activeDMs,      setActiveDMs]      = useState(()=>{
+    // FIX 6: гости не загружают DM из localStorage
+    if (currentUser?.role === 'guest') return {};
+    return loadDMs();
+  });
+  const [selectedCh,     setSelectedCh]     = useState(null);
+  const [showSidebar,    setShowSidebar]     = useState(false);
+  const [compact,        setCompact]         = useState(false);
+  const [channelModal,   setChannelModal]    = useState(null);
+  const [dmPicker,       setDmPicker]        = useState(false);
+  const [replyTo,        setReplyTo]         = useState(null);
+  const [editingMsg,     setEditingMsg]      = useState(null);
+  const [pinnedMsg,      setPinnedMsg]       = useState(null);
+  const [scrollToPinned, setScrollToPinned]  = useState(null);
+  const [searchQuery,    setSearchQuery]     = useState('');
+  const [showSearch,     setShowSearch]      = useState(false);
+  const [dynChannels,    setDynChannels]     = useState([]);
 
   const isAdmin   = ADMIN_ROLES.includes(role);
   const canManage = CAN_MANAGE.includes(role);
   const canCreate = CAN_CREATE.includes(role);
+  // FIX 6: гость не может инициировать DM
+  const canInitDM = CAN_INIT_DM.includes(role);
 
-  useEffect(()=>{ saveDMs(activeDMs); },[activeDMs]);
+  useEffect(()=>{
+    // FIX 6: не сохраняем DM для гостей
+    if (role !== 'guest') saveDMs(activeDMs);
+  },[activeDMs, role]);
 
   const loadDyn = useCallback(async()=>{
     const {data} = await supabase.from('channels').select('*').eq('is_archived',false).order('created_at',{ascending:true});
@@ -510,20 +536,25 @@ export default function ChatLayout({ openDmWithUser, onDmOpened, onOpenProfile }
     Object.keys(activeDMs).forEach(uid=>{ if (!getProfile(uid)) fetchProfile(uid); });
   },[currentUser]); // eslint-disable-line
 
+  // FIX 6: входящие непрочитанные DM видны гостям (им написали), но они не могут сами начать
   useEffect(()=>{
     if (!unreadDm) return;
-    setActiveDMs(prev=>{ let ch=false; const nx={...prev}; Object.entries(unreadDm).forEach(([uid,cnt])=>{ if(cnt>0&&!nx[uid]){nx[uid]={uid,since:Date.now()};ch=true;} }); return ch?nx:prev; });
+    setActiveDMs(prev=>{
+      let ch=false; const nx={...prev};
+      Object.entries(unreadDm).forEach(([uid,cnt])=>{ if(cnt>0&&!nx[uid]){nx[uid]={uid,since:Date.now()};ch=true;} });
+      return ch?nx:prev;
+    });
   },[unreadDm]);
 
   const openDM = useCallback((user)=>{
     dmOpenedRef.current = true;
-    setActiveDMs(prev=>{ const u={...prev,[user.id]:{uid:user.id,name:user.name,initials:user.initials,color:user.color,since:Date.now()}}; saveDMs(u); return u; });
+    setActiveDMs(prev=>{ const u={...prev,[user.id]:{uid:user.id,name:user.name,initials:user.initials,color:user.color,since:Date.now()}}; if(role!=='guest') saveDMs(u); return u; });
     const dmCh = {key:`dm_${user.id}`,name:user.name,icon:'💬',isDM:true,dmUserId:user.id,section:'Личные сообщения'};
     setSelectedCh(dmCh);
     setShowSidebar(false); setReplyTo(null); setEditingMsg(null);
     setUnreadDm?.(prev=>({...prev,[user.id]:0}));
     loadDmMessages?.(user.id);
-  },[setUnreadDm,loadDmMessages]);
+  },[setUnreadDm, loadDmMessages, role]);
 
   useEffect(()=>{ if(openDmWithUser){openDM(openDmWithUser);onDmOpened?.();} },[openDmWithUser]); // eslint-disable-line
 
@@ -532,57 +563,110 @@ export default function ChatLayout({ openDmWithUser, onDmOpened, onOpenProfile }
   const schoolChannels = [];
   if (['student','teacher'].includes(role)||isAdmin) {
     const sid=currentUser?.school_id; const sch=SCHOOLS.find(s=>s.id===sid);
-    if (sid&&sch) schoolChannels.push({key:`school_${sid}_general`,name:'Общий чат',icon:'💬',section:sch.name},{key:`school_${sid}_homework`,name:'Задания',icon:'📝',section:sch.name},{key:`school_${sid}_materials`,name:'Материалы',icon:'📚',section:sch.name,readonly:role==='student'},{key:`school_${sid}_results`,name:'Результаты',icon:'🏆',section:sch.name});
+    if (sid&&sch) schoolChannels.push(
+      {key:`school_${sid}_general`,  name:'Общий чат',  icon:'💬', section:sch.name, sectionType:'school', schoolId:sid},
+      {key:`school_${sid}_homework`, name:'Задания',     icon:'📝', section:sch.name, sectionType:'school', schoolId:sid},
+      {key:`school_${sid}_materials`,name:'Материалы',   icon:'📚', section:sch.name, sectionType:'school', schoolId:sid, readonly:role==='student'},
+      {key:`school_${sid}_results`,  name:'Результаты',  icon:'🏆', section:sch.name, sectionType:'school', schoolId:sid},
+    );
   }
   const mentorChannels = [];
   if (['mentor','mentee'].includes(role)||isAdmin) {
     const mid=role==='mentor'?currentUser?.id:currentUser?.mentor_id;
-    if (mid) { mentorChannels.push({key:`mentor_${mid}_general`,name:'Группа',icon:'🌱',section:'Наставничество'},{key:`mentor_${mid}_tasks`,name:'Задания и цели',icon:'🎯',section:'Наставничество'}); if(role==='mentee') mentorChannels.push({key:`mentor_${mid}_personal_${currentUser.id}`,name:'Личный чат',icon:'👤',section:'Наставничество'}); }
+    if (mid) {
+      mentorChannels.push(
+        {key:`mentor_${mid}_general`,name:'Группа',       icon:'🌱',section:'Наставничество',sectionType:'mentor',mentorId:mid},
+        {key:`mentor_${mid}_tasks`,  name:'Задания и цели',icon:'🎯',section:'Наставничество',sectionType:'mentor',mentorId:mid},
+      );
+      if(role==='mentee') mentorChannels.push({key:`mentor_${mid}_personal_${currentUser.id}`,name:'Личный чат',icon:'👤',section:'Наставничество',sectionType:'mentor',mentorId:mid});
+    }
   }
-  const adminChannels = isAdmin ? [{key:'admin_managers',name:'Руководство',icon:'🌍',section:'Администрирование'},{key:'admin_teachers',name:'Преподаватели',icon:'👨‍🏫',section:'Администрирование'}] : [];
-  const dynFmt = dynChannels.map(ch=>({key:`dyn_${ch.id}`,dynId:ch.id,name:ch.name,icon:ch.icon||'💬',description:ch.description,section:'Дополнительные',readonly:(ch.readonly_roles||[]).includes(role)&&!isAdmin}));
-  const allChannels = [...cityChannels,...schoolChannels,...mentorChannels,...adminChannels,...dynFmt];
+  const adminChannels = isAdmin ? [
+    {key:'admin_managers',name:'Руководство',  icon:'🌍',section:'Администрирование',sectionType:'admin'},
+    {key:'admin_teachers',name:'Преподаватели',icon:'👨‍🏫',section:'Администрирование',sectionType:'admin'},
+  ] : [];
 
+  // FIX 8: динамические каналы правильно определяют section по type и city_id/school_id/mentor_id
+  const dynFmt = dynChannels.map(ch=>{
+    let section = 'Дополнительные';
+    let sectionType = 'city';
+    if (ch.type === 'school' && ch.school_id) {
+      const sch = SCHOOLS.find(s=>s.id===ch.school_id);
+      section = sch?.name || 'Школа';
+      sectionType = 'school';
+    } else if (ch.type === 'mentor' && ch.mentor_id) {
+      section = 'Наставничество';
+      sectionType = 'mentor';
+    } else if (ch.type === 'city' && ch.city_id) {
+      const ct = CITIES.find(c=>c.id===ch.city_id);
+      section = ct?.name || city?.name || 'Город';
+      sectionType = 'city';
+    }
+    return {
+      key:`dyn_${ch.id}`, dynId:ch.id, name:ch.name, icon:ch.icon||'💬',
+      description:ch.description, section, sectionType,
+      schoolId: ch.school_id, mentorId: ch.mentor_id,
+      readonly:(ch.readonly_roles||[]).includes(role)&&!isAdmin,
+    };
+  });
+
+  const allChannels = [...cityChannels,...schoolChannels,...mentorChannels,...adminChannels,...dynFmt];
   useEffect(()=>{ if(dmOpenedRef.current) return; if(!selectedCh&&allChannels.length>0) setSelectedCh(allChannels[0]); },[role]); // eslint-disable-line
 
+  // FIX 6: DM-секция только если есть активные чаты
   const dmChannelsList = Object.values(activeDMs).map(dm=>{ const p=getProfile(dm.uid)||{name:dm.name||'Участник',initials:dm.initials||'?',color:dm.color}; return {key:`dm_${dm.uid}`,name:p.name||dm.name||'Участник',icon:'💬',isDM:true,dmUserId:dm.uid,section:'Личные сообщения'}; });
+
   const sections = {};
-  if (dmChannelsList.length>0) sections['Личные сообщения']=dmChannelsList;
+  if (dmChannelsList.length>0) sections['Личные сообщения'] = dmChannelsList;
   allChannels.forEach(ch=>{ if(!sections[ch.section]) sections[ch.section]=[]; sections[ch.section].push(ch); });
 
   const selectCh = ch=>{ setSelectedCh(ch); setShowSidebar(false); setPinnedMsg(null); setReplyTo(null); setEditingMsg(null); setScrollToPinned(null); if(ch.isDM){setUnreadDm?.(prev=>({...prev,[ch.dmUserId]:0}));loadDmMessages?.(ch.dmUserId);}else{markChannelRead?.(ch.key);} };
-  const closeDM  = uid=>{ setActiveDMs(prev=>{const u={...prev};delete u[uid];saveDMs(u);return u;}); if(selectedCh?.key===`dm_${uid}`) setSelectedCh(allChannels[0]||null); };
+  const closeDM  = uid=>{ setActiveDMs(prev=>{const u={...prev};delete u[uid];if(role!=='guest') saveDMs(u);return u;}); if(selectedCh?.key===`dm_${uid}`) setSelectedCh(allChannels[0]||null); };
 
-  // FIX 3: закрепление — сохраняем msg и scrollTo id
   const handlePin = async (msg) => {
     const val = !msg.is_pinned;
     await supabase.from('messages').update({is_pinned:val}).eq('id',msg.id);
-    if (val) { setPinnedMsg(msg); }
-    else     { setPinnedMsg(null); setScrollToPinned(null); }
+    setPinnedMsg(val?msg:null);
   };
 
-  // FIX 2: удаление — обновляем локальный стейт сразу
+  // FIX 2+5+7: optimistic update + fallback reload для групповых чатов
   const handleDelete = async (msg) => {
     if (!window.confirm('Удалить сообщение?')) return;
     const now = new Date().toISOString();
-    const updater = m => ({...m, deleted_at: now, text: m.text});
+    const updater = m => ({...m, deleted_at:now});
     if (selectedCh?.isDM) updateLocalDmMessage?.(selectedCh.dmUserId, msg.id, updater);
     else                   updateLocalMessage?.(selectedCh.key, msg.id, updater);
     const tbl = selectedCh?.isDM ? 'direct_messages' : 'messages';
-    await supabase.from(tbl).update({deleted_at: now}).eq('id', msg.id);
+    const { error } = await supabase.from(tbl).update({deleted_at:now}).eq('id',msg.id);
+    if (error) {
+      console.error('delete error:', error.message);
+      // Откатываем optimistic update при ошибке
+      const revert = m => ({...m, deleted_at:null});
+      if (selectedCh?.isDM) updateLocalDmMessage?.(selectedCh.dmUserId, msg.id, revert);
+      else                   updateLocalMessage?.(selectedCh.key, msg.id, revert);
+    }
   };
 
+  // FIX 2+5: реакции — optimistic + корректный supabase update для group чатов
   const handleReact = async (msg, emoji) => {
-    const updater = m=>{ const r={...(m.reactions||{})}; const u=r[emoji]||[]; r[emoji]=u.includes(currentUser.id)?u.filter(x=>x!==currentUser.id):[...u,currentUser.id]; return {...m,reactions:r}; };
+    const myId = currentUser.id;
+    // Optimistic
+    const updater = m=>{ const r={...(m.reactions||{})}; const u=r[emoji]||[]; r[emoji]=u.includes(myId)?u.filter(x=>x!==myId):[...u,myId]; return {...m,reactions:r}; };
     if (selectedCh?.isDM) updateLocalDmMessage?.(selectedCh.dmUserId,msg.id,updater);
     else                   updateLocalMessage?.(selectedCh.key,msg.id,updater);
-    const tbl=selectedCh?.isDM?'direct_messages':'messages';
-    const {data}=await supabase.from(tbl).select('reactions').eq('id',msg.id).single();
-    const r=data?.reactions||{}; const u=r[emoji]||[];
-    await supabase.from(tbl).update({reactions:{...r,[emoji]:u.includes(currentUser.id)?u.filter(x=>x!==currentUser.id):[...u,currentUser.id]}}).eq('id',msg.id);
+    // Supabase — используем текущие reactions из уже обновлённого стейта
+    const tbl = selectedCh?.isDM ? 'direct_messages' : 'messages';
+    const {data} = await supabase.from(tbl).select('reactions').eq('id',msg.id).single();
+    const r = data?.reactions||{}; const u = r[emoji]||[];
+    await supabase.from(tbl).update({reactions:{...r,[emoji]:u.includes(myId)?u.filter(x=>x!==myId):[...u,myId]}}).eq('id',msg.id);
   };
 
   const handleDelDyn = async ch=>{ if(!window.confirm(`Удалить «${ch.name}»?`)) return; await supabase.from('channels').delete().eq('id',ch.dynId); loadDyn(); if(selectedCh?.key===ch.key) setSelectedCh(allChannels[0]||null); };
+
+  // FIX 8: создать канал в правильной секции
+  const openChannelModal = (sectionInfo = {}) => {
+    setChannelModal({ section: sectionInfo });
+  };
 
   const totalDmUnread = Object.values(unreadDm||{}).reduce((a,b)=>a+b,0);
   const isWriteable   = selectedCh && canWrite(role, selectedCh);
@@ -598,18 +682,47 @@ export default function ChatLayout({ openDmWithUser, onDmOpened, onOpenProfile }
           <button onClick={()=>setCompact(v=>!v)} className="btn-ghost" style={{padding:'6px 8px',fontSize:13}}>{compact?'›':'‹'}</button>
         </div>
         {showSearch&&!compact&&<div style={{padding:'8px 12px',borderBottom:'1px solid var(--border)'}}><input value={searchQuery} onChange={e=>setSearchQuery(e.target.value)} placeholder="Поиск каналов..." style={{width:'100%',padding:'7px 10px',borderRadius:8,border:'1px solid var(--border2)',background:'var(--bg-overlay)',color:'var(--text)',fontFamily:'inherit',fontSize:13,outline:'none'}}/></div>}
+
         <div style={{flex:1,overflowY:'auto',paddingBottom:8}}>
-          <div style={{padding:'10px 12px 4px'}}>
-            <button onClick={()=>setDmPicker(true)} style={{width:'100%',padding:compact?'8px 0':'8px 12px',borderRadius:10,background:'var(--accent-dim)',border:'1px solid var(--border)',color:'var(--accent-bright)',cursor:'pointer',fontFamily:'inherit',fontSize:12,fontWeight:500,display:'flex',alignItems:'center',justifyContent:compact?'center':'flex-start',gap:6,transition:'all 0.15s'}}>
-              {IC.dm}{!compact&&<span>Написать напрямую</span>}{totalDmUnread>0&&<span style={{marginLeft:'auto',background:'var(--red)',color:'#fff',fontSize:10,padding:'1px 5px',borderRadius:10,flexShrink:0}}>{totalDmUnread>99?'99+':totalDmUnread}</span>}
-            </button>
-          </div>
+          {/* FIX 6: кнопка DM только для не-гостей */}
+          {canInitDM && (
+            <div style={{padding:'10px 12px 4px'}}>
+              <button onClick={()=>setDmPicker(true)} style={{width:'100%',padding:compact?'8px 0':'8px 12px',borderRadius:10,background:'var(--accent-dim)',border:'1px solid var(--border)',color:'var(--accent-bright)',cursor:'pointer',fontFamily:'inherit',fontSize:12,fontWeight:500,display:'flex',alignItems:'center',justifyContent:compact?'center':'flex-start',gap:6,transition:'all 0.15s'}}>
+                {IC.dm}{!compact&&<span>Написать напрямую</span>}{totalDmUnread>0&&<span style={{marginLeft:'auto',background:'var(--red)',color:'#fff',fontSize:10,padding:'1px 5px',borderRadius:10,flexShrink:0}}>{totalDmUnread>99?'99+':totalDmUnread}</span>}
+              </button>
+            </div>
+          )}
+          {/* FIX 6: гость видит счётчик если ему написали, но не может сам начать */}
+          {!canInitDM && totalDmUnread > 0 && (
+            <div style={{padding:'10px 12px 4px'}}>
+              <div style={{padding:'8px 12px',borderRadius:10,background:'var(--bg-overlay)',border:'1px solid var(--border)',fontSize:12,color:'var(--text3)',display:'flex',alignItems:'center',gap:6}}>
+                {IC.dm} <span>Входящие сообщения</span>
+                <span style={{marginLeft:'auto',background:'var(--red)',color:'#fff',fontSize:10,padding:'1px 5px',borderRadius:10}}>{totalDmUnread}</span>
+              </div>
+            </div>
+          )}
+
           {Object.entries(sections).map(([section,chs])=>{
             const fl=searchQuery?chs.filter(c=>c.name.toLowerCase().includes(searchQuery.toLowerCase())):chs;
             if(fl.length===0) return null;
+            // FIX 8: определяем параметры для создания канала в этой секции
+            const sectionCh = fl[0]; // берём первый канал секции для определения типа
+            const sectionInfo = {
+              name: section,
+              sectionType: sectionCh?.sectionType || 'city',
+              schoolId: sectionCh?.schoolId || null,
+              mentorId: sectionCh?.mentorId || null,
+            };
             return (
               <div key={section}>
-                {!compact&&<div style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'12px 18px 4px'}}><span style={{fontSize:10,fontWeight:700,textTransform:'uppercase',letterSpacing:'0.8px',color:'var(--text4)'}}>{section}</span>{canCreate&&section!=='Личные сообщения'&&<button onClick={()=>setChannelModal({})} style={{background:'none',border:'none',color:'var(--text3)',cursor:'pointer',padding:2}}>{IC.plus}</button>}</div>}
+                {!compact&&(
+                  <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'12px 18px 4px'}}>
+                    <span style={{fontSize:10,fontWeight:700,textTransform:'uppercase',letterSpacing:'0.8px',color:'var(--text4)'}}>{section}</span>
+                    {canCreate&&section!=='Личные сообщения'&&section!=='Администрирование'&&(
+                      <button onClick={()=>openChannelModal(sectionInfo)} style={{background:'none',border:'none',color:'var(--text3)',cursor:'pointer',padding:2}}>{IC.plus}</button>
+                    )}
+                  </div>
+                )}
                 {fl.map(ch=>(
                   <div key={ch.key} style={{display:'flex',alignItems:'center',position:'relative'}}>
                     <div style={{flex:1}}><ChannelItem icon={ch.icon} name={ch.name} active={selectedCh?.key===ch.key} compact={compact} unread={ch.isDM?(unreadDm?.[ch.dmUserId]||0):(unreadChannels?.[ch.key]||0)} onClick={()=>selectCh(ch)} onClose={ch.isDM?()=>closeDM(ch.dmUserId):null}/></div>
@@ -633,24 +746,22 @@ export default function ChatLayout({ openDmWithUser, onDmOpened, onOpenProfile }
                 <div onClick={selectedCh.isDM?()=>onOpenProfile&&onOpenProfile(selectedCh.dmUserId):undefined} style={{fontSize:15,fontWeight:600,color:selectedCh.isDM?'var(--accent-bright)':'var(--text)',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',cursor:selectedCh.isDM?'pointer':'default'}}>{selectedCh.name}</div>
                 <div style={{fontSize:11,color:'var(--text3)'}}>{selectedCh.isDM?'Личное сообщение':selectedCh.description||selectedCh.section}</div>
               </div>
-              {canCreate&&!selectedCh.isDM&&<button onClick={()=>setChannelModal(selectedCh.dynId?dynChannels.find(c=>c.id===selectedCh.dynId)||{}:{})} className="btn-ghost" style={{padding:'6px 10px',fontSize:12,display:'flex',alignItems:'center',gap:4,flexShrink:0}}>{IC.plus} Канал</button>}
+              {canCreate&&!selectedCh.isDM&&(
+                <button onClick={()=>{
+                  // FIX 8: создать канал в той же секции что и текущий
+                  const si = {name:selectedCh.section, sectionType:selectedCh.sectionType||'city', schoolId:selectedCh.schoolId||null, mentorId:selectedCh.mentorId||null};
+                  openChannelModal(si);
+                }} className="btn-ghost" style={{padding:'6px 10px',fontSize:12,display:'flex',alignItems:'center',gap:4,flexShrink:0}}>{IC.plus} Канал</button>
+              )}
             </div>
 
-            {/* FIX 3: Закреплённое — кликабельно, показывает полный текст в tooltip */}
             {pinnedMsg&&(
-              <div onClick={()=>setScrollToPinned(pinnedMsg.id)}
-                style={{padding:'8px 16px',background:'var(--accent-dim)',borderBottom:'1px solid var(--border)',display:'flex',alignItems:'center',gap:10,cursor:'pointer',transition:'background 0.15s'}}
-                onMouseEnter={e=>e.currentTarget.style.background='var(--bg-hover)'}
-                onMouseLeave={e=>e.currentTarget.style.background='var(--accent-dim)'}>
+              <div onClick={()=>setScrollToPinned(pinnedMsg.id)} style={{padding:'8px 16px',background:'var(--accent-dim)',borderBottom:'1px solid var(--border)',display:'flex',alignItems:'center',gap:10,cursor:'pointer',transition:'background 0.15s'}} onMouseEnter={e=>e.currentTarget.style.background='var(--bg-hover)'} onMouseLeave={e=>e.currentTarget.style.background='var(--accent-dim)'}>
                 <span style={{color:'var(--accent)',flexShrink:0,fontSize:14}}>📌</span>
-                <div style={{flex:1,minWidth:0}}>
-                  <div style={{fontSize:11,color:'var(--accent-bright)',fontWeight:600,marginBottom:1}}>Закреплённое сообщение</div>
-                  <div style={{fontSize:13,color:'var(--text2)',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{pinnedMsg.text}</div>
-                </div>
+                <div style={{flex:1,minWidth:0}}><div style={{fontSize:11,color:'var(--accent-bright)',fontWeight:600,marginBottom:1}}>Закреплённое сообщение</div><div style={{fontSize:13,color:'var(--text2)',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{pinnedMsg.text}</div></div>
                 {canManage&&<button onClick={e=>{e.stopPropagation();setPinnedMsg(null);setScrollToPinned(null);}} style={{background:'none',border:'none',color:'var(--text3)',cursor:'pointer',flexShrink:0,padding:'0 4px'}}>{IC.close}</button>}
               </div>
             )}
-
             {!isWriteable&&!selectedCh.isDM&&role==='guest'&&<div style={{padding:'8px 16px',background:'var(--amber-dim)',borderBottom:'1px solid var(--border)',fontSize:13,color:'var(--amber)'}}>Этот канал только для участников клуба.</div>}
 
             <MessageList channelKey={selectedCh.key} isDM={!!selectedCh.isDM} dmUserId={selectedCh.dmUserId}
@@ -664,14 +775,30 @@ export default function ChatLayout({ openDmWithUser, onDmOpened, onOpenProfile }
             <MessageInput channelKey={selectedCh.key} readonly={!isWriteable&&!selectedCh.isDM}
               isDM={!!selectedCh.isDM} dmUserId={selectedCh.dmUserId}
               replyTo={replyTo} onClearReply={()=>setReplyTo(null)}
-              editingMsg={editingMsg} onCancelEdit={()=>setEditingMsg(null)}/>
+              editingMsg={editingMsg} onCancelEdit={()=>setEditingMsg(null)}
+              onEditSaved={(updated) => {
+                // FIX 2+7: update local state immediately after successful edit
+                if (selectedCh?.isDM) updateLocalDmMessage?.(selectedCh.dmUserId, updated.id, ()=>updated);
+                else                   updateLocalMessage?.(selectedCh.key, updated.id, ()=>updated);
+              }}/>
           </>
         ):(
           <div className="empty-state"><div className="icon">💬</div><p>Выберите канал</p></div>
         )}
       </div>
 
-      {channelModal!==null&&<ChannelModal channel={channelModal?.id?channelModal:null} cityId={cityId} schoolId={currentUser?.school_id} mentorId={role==='mentor'?currentUser?.id:null} onClose={()=>setChannelModal(null)} onSaved={()=>{setChannelModal(null);loadDyn();}}/>}
+      {/* FIX 8: передаём sectionInfo в ChannelModal */}
+      {channelModal!==null&&(
+        <ChannelModal
+          channel={null}
+          cityId={cityId}
+          schoolId={channelModal?.section?.schoolId || currentUser?.school_id || null}
+          mentorId={channelModal?.section?.mentorId || (role==='mentor'?currentUser?.id:null)}
+          sectionHint={channelModal?.section?.name}
+          onClose={()=>setChannelModal(null)}
+          onSaved={()=>{ setChannelModal(null); loadDyn(); }}
+        />
+      )}
       {dmPicker&&<DMPickerModal onClose={()=>setDmPicker(false)} onSelect={u=>openDM(u)}/>}
 
       <style>{`
