@@ -181,7 +181,7 @@ export default function AppShell() {
           {activeView==='schools'    && <SchoolsCabinet />}
           {activeView==='mentoring'  && <MentoringCabinet />}
           {activeView==='governance' && <GovernancePage />}
-          {activeView==='crm'        && <CRMPage onOpenDm={u=>{ setOpenDmWithUser(u); setActiveView('chat'); }} />}
+          {activeView==='crm'        && <CRMPage onOpenDm={u=>{ setOpenDmWithUser(u); setActiveView('chat'); }} onOpenProfile={uid=>{ setProfileUserId(uid); setActiveView('profile'); }} />}
           {activeView==='dashboard'  && <AdminDashboard />}
           {activeView==='profile'    && <ProfilePage viewUserId={profileUserId} onClear={()=>setProfileUserId(null)} onWriteDm={u=>{ setOpenDmWithUser(u); setProfileUserId(null); setActiveView('chat'); }} />}
           {activeView==='devpanel'   && <DevPanel />}
